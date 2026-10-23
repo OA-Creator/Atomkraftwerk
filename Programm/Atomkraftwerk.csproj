@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseAppHost>false</UseAppHost>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>Atomkraftwerk</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="lib/*.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="atomkraftwerk.json"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+    <None Include="web\**\*"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+    <None Update="Atomkraftwerk starten.bat"><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+  </ItemGroup>
+</Project>

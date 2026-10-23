@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0B0E11">
+<title>Atomkraftwerk Leitstand</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --grund:#0B0E11; --kopf:#0F1317; --panel:#12171C; --feld:#0E1216; --linie:#222A31; --linie2:#2A333B;
+  --text:#E6EAEE; --text2:#C3CBD3; --leise:#8C98A4; --stumm:#6B7681; --aus:#5A6670;
+  --bernstein:#F2A33A; --wasser:#5BC8E0; --ok:#4CC77A; --ok-grund:#12221A; --ok-rand:#2C5A3A; --ok-text:#9FE2B3;
+  --warn:#F2C46B; --warn-grund:#2A2112; --warn-rand:#5A4220; --alarm:#FF6B70; --alarm-grund:#2A1416; --alarm-rand:#6A2A2E;
+  --balken:#1F3A44; --aktiv:#1B2229;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace; --schmal:'Barlow Condensed','Arial Narrow',sans-serif; --sans:Barlow,system-ui,'Segoe UI',sans-serif;
+}
+:root[data-theme="hell"]{
+  --grund:#EEF1F4; --kopf:#FFFFFF; --panel:#FFFFFF; --feld:#F2F4F7; --linie:#D9DEE4; --linie2:#C9D0D8;
+  --text:#14181C; --text2:#2E363E; --leise:#56616C; --stumm:#5F6A75; --aus:#8D97A1;
+  --bernstein:#B86A00; --wasser:#0B7F9A; --ok:#1E8B4C; --ok-grund:#E3F4EA; --ok-rand:#9ED3B3; --ok-text:#16683A;
+  --warn:#8A5A00; --warn-grund:#FFF2D9; --warn-rand:#E7C27A; --alarm:#C2262C; --alarm-grund:#FDE5E6; --alarm-rand:#EBA2A5;
+  --balken:#BFE3EC; --aktiv:#EEF1F4;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--grund);color:var(--text);font-family:var(--sans)}
+a{color:var(--bernstein)}
+button{font:inherit}
+.kopf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:14px 24px;border-bottom:1px solid var(--linie);background:var(--kopf);position:sticky;top:0;z-index:5}
+.marke{display:flex;align-items:center;gap:12px}
+.marke b{display:block;font-family:var(--schmal);font-weight:700;font-size:24px;letter-spacing:.08em;line-height:1}
+.marke small{display:block;font-size:12px;color:var(--leise);letter-spacing:.14em;margin-top:3px}
+.rechts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pille{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:14px;border:1px solid var(--ok-rand);background:var(--ok-grund);color:var(--ok-text)}
+.pille i{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.pille.warn{border-color:var(--warn-rand);background:var(--warn-grund);color:var(--warn)} .pille.warn i{background:var(--warn)}
+.pille.alarm{border-color:var(--alarm-rand);background:var(--alarm-grund);color:var(--alarm)} .pille.alarm i{background:var(--alarm)}
+.laufzeit{font-family:var(--mono);font-size:14px;color:var(--leise)}
+.knopf{min-height:44px;padding:0 14px;background:var(--panel);color:var(--text);border:1px solid var(--linie2);border-radius:8px;cursor:pointer}
+.knopf:hover{border-color:var(--bernstein)}
+.rahmen{display:flex;flex-wrap:wrap;gap:24px;padding:24px;max-width:1500px;margin:0 auto}
+nav.seite{flex:1 1 200px;max-width:220px;display:flex;flex-direction:column;gap:4px}
+nav.seite .titel{font-family:var(--schmal);font-size:13px;letter-spacing:.16em;color:var(--stumm);padding:4px 12px 8px}
+nav.seite a{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:0 12px;border-radius:8px;color:var(--text2);text-decoration:none}
+nav.seite a:hover{background:var(--aktiv)}
+nav.seite a.an{background:var(--aktiv);color:var(--bernstein);font-weight:600;box-shadow:inset 3px 0 0 var(--bernstein)}
+nav.seite a.spaeter{color:var(--aus)}
+nav.seite a.spaeter span{font-size:12px;border:1px solid var(--linie2);border-radius:4px;padding:1px 6px}
+main{flex:999 1 640px;min-width:0;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-content:start}
+.panel{background:var(--panel);border:1px solid var(--linie);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px;scroll-margin-top:90px}
+.panel.warn{border-color:var(--warn-rand)} .panel.alarm{border-color:var(--alarm);box-shadow:0 0 0 1px var(--alarm) inset}
+.panel h2{margin:0;font-family:var(--schmal);font-weight:600;font-size:15px;letter-spacing:.16em;color:var(--leise);display:flex;justify-content:space-between;gap:8px}
+.panel h2 span{font-family:var(--sans);font-weight:400;letter-spacing:0;font-size:13px;color:var(--stumm)}
+.s7{grid-column:span 7}.s5{grid-column:span 5}.s4{grid-column:span 4}.s12{grid-column:span 12}
+.gross{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+.zahl{font-family:var(--mono);font-weight:700;line-height:.9;letter-spacing:-.03em}
+.einh{color:var(--leise)}
+.pfeil{font-size:40px;line-height:1}
+.pfeil.steigt{color:var(--alarm)} .pfeil.faellt{color:var(--ok)} .pfeil.steht{color:var(--leise)}
+.felder{display:grid;gap:10px}
+.feld{background:var(--feld);border-radius:8px;padding:11px 13px;min-width:0}
+.feld small{display:block;font-size:12px;letter-spacing:.12em;color:var(--stumm)}
+.feld b{display:block;font-family:var(--mono);font-weight:500;font-size:21px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feld b em{font-style:normal;font-size:14px;color:var(--leise)}
+.verlauf{height:70px;display:flex;align-items:flex-end;gap:2px}
+.verlauf div{flex:1;background:var(--balken);border-radius:2px 2px 0 0;min-height:2px}
+.klein{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:16px;color:var(--text2)}
+.waechter{display:flex;flex-direction:column;gap:6px}
+.waechter .zeile{display:flex;justify-content:space-between;gap:8px;font-size:15px}
+.waechter .zeile b{font-family:var(--mono);font-weight:500}
+.leiste{position:relative;height:10px;background:var(--feld);border-radius:4px;overflow:hidden}
+.leiste .zone{position:absolute;top:0;bottom:0}
+.leiste .zone.w{background:color-mix(in srgb,var(--warn) 22%,transparent)}
+.leiste .zone.a{background:color-mix(in srgb,var(--alarm) 30%,transparent);border-left:2px solid var(--alarm)}
+.leiste .fuell{position:absolute;left:0;top:2px;bottom:2px;background:var(--ok);border-radius:3px;width:0;transition:width .6s}
+.skala{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--stumm);margin-top:2px}
+.leiste.warn .fuell{background:var(--warn)} .leiste.alarm .fuell{background:var(--alarm)}
+.hinweis{margin:0;font-size:14px;color:var(--leise);line-height:1.5}
+.marke-klein{font-size:13px;color:var(--bernstein);border:1px solid var(--warn-rand);border-radius:4px;padding:2px 8px;font-family:var(--sans);letter-spacing:0}
+.liste{display:flex;flex-direction:column}
+.liste div{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--linie);font-size:15px}
+.liste div b{font-family:var(--mono);font-weight:500}
+.unten{display:none}
+dialog#qr{background:var(--panel);color:var(--text);border:1px solid var(--linie2);border-radius:14px;padding:28px;max-width:360px;text-align:center}
+dialog#qr::backdrop{background:rgba(0,0,0,.6)}
+#qrbild{background:#fff;padding:14px;border-radius:10px;display:inline-block;margin:14px 0}
+#qrbild img,#qrbild canvas{display:block}
+#qradresse{font-family:var(--mono);font-size:16px;color:var(--bernstein);word-break:break-all}
+.tip{position:fixed;z-index:20;pointer-events:none;max-width:300px;background:var(--kopf);color:var(--text);border:1px solid var(--bernstein);border-radius:8px;padding:8px 11px;font-size:14px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.4);display:none}
+[data-tip]{cursor:help}
+.steuer{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.steuer select{min-height:44px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 10px;font:inherit;font-size:15px;max-width:100%}
+.steuer select:focus{outline:2px solid var(--bernstein);outline-offset:1px}
+.steuer .wahl{display:flex;align-items:center;gap:8px;min-width:0}
+.steuer .punkt{width:12px;height:12px;border-radius:50%;flex:none}
+.diagramm{position:relative;width:100%;height:320px;background:var(--feld);border-radius:8px;touch-action:none}
+.diagramm svg{display:block;width:100%;height:100%}
+.diagramm .linie-hilf{stroke:var(--linie);stroke-width:1}
+.diagramm text{fill:var(--stumm);font-family:var(--mono);font-size:11px}
+.diagramm .zeiger{stroke:var(--text2);stroke-width:1;stroke-dasharray:3 3}
+.diagramm .info{position:absolute;top:8px;pointer-events:none;background:var(--kopf);border:1px solid var(--bernstein);border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:13px;line-height:1.5;white-space:nowrap;display:none}
+.legende{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.legende .feld b{font-size:16px}
+table.spitzen{width:100%;border-collapse:collapse;font-size:15px}
+table.spitzen td,table.spitzen th{padding:7px 4px;border-bottom:1px solid var(--linie);text-align:left}
+table.spitzen th{font-family:var(--schmal);letter-spacing:.12em;font-weight:600;font-size:13px;color:var(--stumm)}
+table.spitzen td.z{font-family:var(--mono);text-align:right}
+.fehler{grid-column:span 12;background:var(--alarm-grund);border:1px solid var(--alarm-rand);color:var(--alarm);border-radius:10px;padding:12px 16px;display:none}
+@media (max-width:1100px){.s7,.s5{grid-column:span 12}.s4{grid-column:span 6}}
+@media (max-width:760px){
+  .kopf{padding:12px 16px}
+  .rahmen{padding:14px 12px 96px;gap:14px}
+  nav.seite{display:none}
+  main{gap:12px}
+  .s4{grid-column:span 12}
+  .panel{padding:18px}
+  .wasserzahl{font-size:72px!important}
+  .unten{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));background:var(--kopf);border:1px solid var(--linie);border-radius:12px;padding:6px;z-index:6}
+  .unten a{min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--text2);text-decoration:none;font-size:14px}
+  .unten a.an{background:var(--aktiv);color:var(--bernstein);font-weight:600}
+  .laufzeit{display:none}
+  .steuer .wahl{flex:1 1 100%}
+  .steuer .wahl select{flex:1;min-width:0}
+  table.spitzen{font-size:13px}
+  table.spitzen td.z{white-space:nowrap}
+  .unten a{font-size:13px}
+  .nurpc{display:none}
+}
+</style>
+</head>
+<body>
+<header class="kopf">
+  <div class="marke">
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true" fill="none" stroke="var(--bernstein)" stroke-width="2"><circle cx="17" cy="17" r="4"/><path d="M17 3a14 14 0 0 1 12.1 7L21 14.8A4.6 4.6 0 0 0 17 12.4Z"/><path d="M5 24a14 14 0 0 1 0-14l8 4.6a4.6 4.6 0 0 0 0 4.8Z"/><path d="M29 24a14 14 0 0 1-24 0l8-4.6a4.6 4.6 0 0 0 8 0Z"/></svg>
+    <div><b>ATOMKRAFTWERK</b><small>LEITSTAND · OAPC</small></div>
+  </div>
+  <div class="rechts">
+    <span class="pille" id="pille" role="status" data-tip="Gesamtzustand aller Werte: grün = alles normal, gelb = Warnung, rot = Alarm"><i></i><span id="pilletext">verbinde …</span></span>
+    <span class="laufzeit" id="laufzeit" data-tip="Wie lange der PC heute läuft (gezählt, solange das Atomkraftwerk-Programm läuft)"></span>
+    <button class="knopf nurpc" id="handyknopf" type="button" data-tip="QR-Code anzeigen, um den Leitstand aufs Handy zu holen">Aufs Handy</button>
+    <button class="knopf" id="thema" type="button" data-tip="Zwischen hellem und dunklem Aussehen umschalten">Hell</button>
+  </div>
+</header>
+
+<div class="rahmen">
+  <nav class="seite" aria-label="Bereiche">
+    <div class="titel">ANLAGE</div>
+    <a href="#kuehlung" class="an">Kühlkreislauf</a>
+    <a href="#prozessor">Prozessor &amp; Grafik</a>
+    <a href="#board">Board-Wächter</a>
+    <a href="#strom">Strom &amp; Kosten</a>
+    <a href="#auswertung">Auswertung</a>
+    <div class="titel" style="padding-top:18px">AUSBAU</div>
+    <a href="#" class="spaeter" aria-disabled="true" data-tip="Balkonkraftwerk: erzeugter Strom – kommt 2027">Erzeugung <span>2027</span></a>
+    <a href="#" class="spaeter" aria-disabled="true" data-tip="Balkonkraftwerk: Batteriespeicher – kommt 2027">Speicher <span>2027</span></a>
+  </nav>
+
+  <main>
+    <div class="fehler" id="fehler">Keine Verbindung zum Atomkraftwerk. Läuft das Programm?</div>
+
+    <section class="panel s7" id="kuehlung">
+      <h2><span style="font:inherit;letter-spacing:inherit;color:inherit">KÜHLMITTEL · <b id="wname" style="font-weight:600">BEHÄLTER</b></span><span id="icueinfo"></span></h2>
+      <div class="gross">
+        <span class="pfeil steht" id="pfeil" aria-label="gleichbleibend" data-tip="Trend der letzten Minute: ▲ rot = steigt, ▼ grün = fällt, ► = bleibt gleich">►</span>
+        <span class="zahl wasserzahl" style="font-size:96px;color:var(--wasser)" id="wasser" data-tip="Kühlwassertemperatur im Behälter, live aus iCUE. Gelb ab 35 °C, rot ab 40 °C">—</span>
+        <span class="einh" style="font-size:30px">°C</span>
+      </div>
+      <div class="felder" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="feld" data-tip="Niedrigste Wassertemperatur seit Programmstart"><small>MIN</small><b id="wmin">—</b></div>
+        <div class="feld" data-tip="Höchste Wassertemperatur seit Programmstart"><small>MAX</small><b id="wmax">—</b></div>
+        <div class="feld" data-tip="Durchschnitt der Wassertemperatur seit Programmstart"><small>Ø SEIT START</small><b id="wavg">—</b></div>
+      </div>
+      <div class="verlauf" id="verlauf" data-tip="Wassertemperatur der letzten 30 Minuten, ein Balken ≈ 30 Sekunden"></div>
+    </section>
+
+    <section class="panel s5" id="durchfluss">
+      <h2>DURCHFLUSS <span>high flow NEXT</span></h2>
+      <div class="gross" id="flussbox" data-tip="Durchfluss des Kühlwassers in Liter pro Stunde, gemessen vom high flow NEXT"><span class="zahl" style="font-size:60px;color:var(--wasser)" id="fluss">—</span><span class="einh" style="font-size:22px">l/h</span></div>
+      <div class="felder" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="feld" data-tip="Niedrigster Durchfluss seit Programmstart"><small>MIN</small><b id="fmin">—</b></div>
+        <div class="feld" data-tip="Höchster Durchfluss seit Programmstart"><small>MAX</small><b id="fmax">—</b></div>
+        <div class="feld" data-tip="Durchschnittlicher Durchfluss seit Programmstart"><small>Ø SEIT START</small><b id="favg">—</b></div>
+      </div>
+      <div class="klein">
+        <span id="leitwert" data-tip="Leitfähigkeit des Kühlmittels. Steigt sie, wird das Wasser schlechter">— µS/cm</span>
+        <span id="qualitaet" data-tip="Wasserqualität laut high flow NEXT (aus der Leitfähigkeit berechnet)">— %</span>
+        <span id="flusswasser" data-tip="Wassertemperatur direkt am high flow NEXT">— °C</span>
+      </div>
+      <div class="liste" id="luefter" data-tip="Lüfterdrehzahlen aus iCUE"></div>
+    </section>
+
+    <section class="panel s4" id="prozessor">
+      <h2 id="cpuname">PROZESSOR</h2>
+      <div class="gross"><span class="zahl" style="font-size:52px" id="cputemp" data-tip="CPU-Temperatur (Tctl/Tdie). Rot ab 90 °C">—</span><span class="einh" style="font-size:22px">°C</span></div>
+      <div class="klein"><span id="cpuwatt" data-tip="Leistungsaufnahme der CPU (Package)">— W</span><span id="cpulast" data-tip="CPU-Auslastung">— %</span><span id="ram" data-tip="Belegter Arbeitsspeicher">— GB</span></div>
+      <div class="felder" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="feld" data-tip="Niedrigste CPU-Temperatur seit Programmstart"><small>MIN</small><b id="cpumin">—</b></div>
+        <div class="feld" data-tip="Höchste CPU-Temperatur seit Programmstart"><small>MAX</small><b id="cpumax">—</b></div>
+        <div class="feld" data-tip="Durchschnittliche CPU-Temperatur seit Programmstart"><small>Ø</small><b id="cpuavg">—</b></div>
+      </div>
+    </section>
+
+    <section class="panel s4">
+      <h2 id="gpuname">GRAFIK</h2>
+      <div class="gross"><span class="zahl" style="font-size:52px" id="gputemp" data-tip="Temperatur des Grafikchips (GPU Core)">—</span><span class="einh" style="font-size:22px">°C</span></div>
+      <div class="klein"><span id="gpuwatt" data-tip="Leistungsaufnahme der Grafikkarte">— W</span><span id="gpulast" data-tip="Grafikkarten-Auslastung">— %</span><span id="gpuluef" data-tip="Drehzahl der Grafikkarten-Lüfter">— rpm</span></div>
+      <div class="felder" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="feld" data-tip="Heißeste Stelle auf dem Grafikchip. Rot ab 105 °C"><small>HOT SPOT</small><b id="gpuhot">—</b></div>
+        <div class="feld" data-tip="Höchste GPU-Temperatur seit Programmstart"><small>MAX</small><b id="gpumax">—</b></div>
+        <div class="feld" data-tip="Durchschnittliche GPU-Temperatur seit Programmstart"><small>Ø</small><b id="gpuavg">—</b></div>
+      </div>
+    </section>
+
+    <section class="panel s4" id="board">
+      <h2>BOARD-WÄCHTER</h2>
+      <div class="waechter" id="vrmtip" data-tip="Temperatur der Spannungswandler rund um den CPU-Sockel">
+        <div class="zeile"><span>VRM MOS</span><b id="vrm">—</b></div>
+        <div class="leiste" id="vrmleiste"><div class="zone w"></div><div class="zone a"></div><div class="fuell"></div></div>
+        <div class="skala" id="vrmskala"></div>
+      </div>
+      <div class="waechter" id="soctip" data-tip="SoC-Spannung: versorgt Speicher-Controller und Infinity Fabric. Zu hoch schadet der CPU auf Dauer">
+        <div class="zeile"><span>CPU VCORE SoC</span><b id="soc">—</b></div>
+        <div class="leiste" id="socleiste"><div class="zone w"></div><div class="zone a"></div><div class="fuell"></div></div>
+        <div class="skala" id="socskala"></div>
+      </div>
+      <div class="waechter" data-tip="Temperatur des Chipsatzes auf dem Board">
+        <div class="zeile"><span>Chipsatz (PCH)</span><b id="pch">—</b></div>
+      </div>
+    </section>
+
+    <section class="panel s12" id="strom">
+      <h2>STROM · FRITZ!DECT-STECKDOSE <span class="marke-klein" id="strommarke" data-tip="Verbindung zur FRITZ!Box">verbinde …</span></h2>
+      <div class="felder" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+        <div class="feld" id="sjetzttip" data-tip="Was der ganze PC gerade an der Steckdose zieht"><small>JETZT</small><b id="sjetzt">— <em>W</em></b></div>
+        <div class="feld" id="sheutetip" data-tip="Verbrauch heute, Standby mitgezählt"><small>HEUTE</small><b id="sheute">— <em>kWh</em></b></div>
+        <div class="feld" data-tip="Durchschnittlicher Verbrauch pro Tag in diesem Monat (im ersten Monat ab Beginn der Strommessung)"><small>MONAT Ø / TAG</small><b id="sschnitt">— <em>kWh</em></b></div>
+        <div class="feld" data-tip="Verbrauch seit Beginn der Messung"><small>GESAMT</small><b id="sgesamt">— <em>kWh</em></b></div>
+        <div class="feld" id="skostentip" data-tip="Stromkosten in diesem Monat (Strompreis steht in atomkraftwerk.json)"><small>KOSTEN MONAT</small><b id="skosten" style="color:var(--bernstein)">— <em>€</em></b></div>
+        <div class="feld" data-tip="Wie lange der PC heute läuft"><small>LAUFZEIT HEUTE</small><b id="laufzeit2">—</b></div>
+      </div>
+    </section>
+    <section class="panel s12" id="auswertung">
+      <h2>AUSWERTUNG <span>gespeicherte Minutenwerte</span></h2>
+      <div class="steuer">
+        <select id="atag" aria-label="Tag" data-tip="Welcher Tag ausgewertet wird"></select>
+        <label class="wahl"><span class="punkt" style="background:var(--wasser)"></span><select id="aw1" aria-label="Wert 1" data-tip="Erster Wert (cyan)"></select></label>
+        <label class="wahl"><span class="punkt" style="background:var(--bernstein)"></span><select id="aw2" aria-label="Wert 2" data-tip="Zweiter Wert (bernstein)"></select></label>
+        <label class="wahl"><span class="punkt" style="background:var(--ok)"></span><select id="aw3" aria-label="Wert 3" data-tip="Dritter Wert (grün)"></select></label>
+      </div>
+      <div class="diagramm" id="adia" data-tip=""><svg id="asvg" preserveAspectRatio="none"></svg><div class="info" id="ainfo"></div></div>
+      <div class="legende" id="aleg"></div>
+      <h2 style="margin-top:6px">SPITZEN DES TAGES</h2>
+      <table class="spitzen"><thead><tr><th>WERT</th><th style="text-align:right">MIN</th><th style="text-align:right">MAX</th><th style="text-align:right">Ø</th></tr></thead><tbody id="aspitzen"></tbody></table>
+    </section>
+  </main>
+</div>
+
+<nav class="unten" aria-label="Bereiche">
+  <a href="#kuehlung" class="an">Kühlung</a>
+  <a href="#prozessor">CPU/GPU</a>
+  <a href="#board">Board</a>
+  <a href="#strom">Strom</a>
+  <a href="#auswertung">Analyse</a>
+</nav>
+
+<dialog id="qr" aria-labelledby="qrtitel">
+  <h2 id="qrtitel" style="margin:0;font-family:var(--schmal);letter-spacing:.12em;font-size:20px">LEITSTAND AUFS HANDY</h2>
+  <p class="hinweis" style="margin:10px 0 0">Mit der Handy-Kamera scannen – das Handy muss im WLAN zu Hause sein.</p>
+  <div id="qrbild"></div>
+  <div id="qradresse"></div>
+  <p class="hinweis" style="margin:14px 0 18px;font-size:13px">Danach im Browser-Menü „Zum Startbildschirm hinzufügen".</p>
+  <form method="dialog"><button class="knopf" style="width:100%">Schließen</button></form>
+</dialog>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let adressen = [];
+$('handyknopf').onclick = () => {
+  const url = adressen[0];
+  $('qrbild').innerHTML = '';
+  if (!url) { $('qradresse').textContent = 'Keine Heimnetz-Adresse gefunden.'; }
+  else if (window.QRCode) { new QRCode($('qrbild'), { text: url, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M }); $('qradresse').textContent = url; }
+  else { $('qradresse').textContent = url; }
+  $('qrbild').style.display = url && window.QRCode ? 'inline-block' : 'none';
+  $('qr').showModal();
+};
+const z = (v, st = 1) => v == null ? '—' : v.toFixed(st).replace('.', ',');
+
+// Hell / Dunkel – Wahl merken (falls der Browser das erlaubt)
+function thema(t) {
+  document.documentElement.dataset.theme = t;
+  $('thema').textContent = t === 'hell' ? 'Dunkel' : 'Hell';
+  try { localStorage.setItem('akw-thema', t); } catch (e) {}
+}
+let gemerkt = null; try { gemerkt = localStorage.getItem('akw-thema'); } catch (e) {}
+thema(gemerkt || 'dunkel');
+$('thema').onclick = () => thema(document.documentElement.dataset.theme === 'hell' ? 'dunkel' : 'hell');
+
+// Menü: aktiven Bereich markieren
+document.querySelectorAll('nav a[href^="#"]').forEach(a => a.addEventListener('click', () => {
+  document.querySelectorAll(`nav a[href="${a.getAttribute('href')}"]`).forEach(x => x.closest('nav').querySelectorAll('a').forEach(y => y.classList.toggle('an', y === x)));
+}));
+
+let wasserId = null, grenzen = {};
+
+function wert(d, id) { return d.werte.find(w => w.id === id) || {}; }
+function setze(id, w, st = 1, einh = '') { $(id).textContent = w == null ? '—' : z(w, st) + einh; }
+
+// Balken mit sichtbaren Grenzen: gelber Bereich ab Warnung, roter Bereich ab Alarm
+function leiste(el, v, von, bis, warn, alarm, st, einh) {
+  const box = $(el), pos = x => Math.max(0, Math.min(100, (x - von) / (bis - von) * 100));
+  box.className = 'leiste' + (v == null ? '' : v >= alarm ? ' alarm' : v >= warn ? ' warn' : '');
+  const [w, a, f] = box.children;
+  w.style.left = pos(warn) + '%'; w.style.width = (pos(alarm) - pos(warn)) + '%';
+  a.style.left = pos(alarm) + '%'; a.style.right = '0';
+  f.style.width = v == null ? '0' : pos(v) + '%';
+  $(el.replace('leiste', 'skala')).innerHTML = `<span>${z(von, st)}</span><span style="color:var(--alarm)">ab ${z(alarm, st)} ${einh} rot</span><span>${z(bis, st)}</span>`;
+}
+
+async function laden() {
+  let d;
+  try { d = await (await fetch('/api/jetzt', { cache: 'no-store' })).json(); }
+  catch (e) { $('fehler').style.display = 'block'; $('pilletext').textContent = 'keine Verbindung'; $('pille').className = 'pille alarm'; return; }
+  $('fehler').style.display = 'none';
+  grenzen = d.grenzen || {};
+  adressen = d.adressen || [];
+
+  const st = { ok: 'Alle Systeme im Normalbereich', warn: 'Warnung', alarm: 'ALARM' };
+  $('pille').className = 'pille ' + (d.status === 'ok' ? '' : d.status);
+  $('pilletext').textContent = st[d.status] || d.status;
+  const h = d.laufzeitHeuteStunden, lz = `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')} h`;
+  $('laufzeit').textContent = 'Laufzeit heute ' + lz; $('laufzeit2').textContent = lz;
+
+  // Kühlung aus iCUE
+  const icue = d.werte.filter(w => w.id.startsWith('icue.'));
+  const wasser = icue.find(w => w.einheit === '°C' && /beh|wasser|coolant|reservoir/i.test(w.name)) || icue.find(w => w.einheit === '°C');
+  if (wasser) {
+    wasserId = wasser.id;
+    $('wname').textContent = wasser.name.toUpperCase();
+    $('wasser').textContent = z(wasser.aktuell);
+    $('wmin').textContent = wasser.min == null ? '—' : z(wasser.min) + '°';
+    $('wmax').textContent = wasser.max == null ? '—' : z(wasser.max) + '°';
+    $('wavg').textContent = wasser.schnitt == null ? '—' : z(wasser.schnitt) + '°';
+    const p = $('kuehlung'); p.className = 'panel s7 ' + (wasser.status === 'ok' || wasser.status === 'aus' ? '' : wasser.status);
+  }
+  $('icueinfo').textContent = d.icue.laeuft ? '' : 'iCUE-Protokoll läuft nicht';
+  // Durchfluss vom high flow NEXT
+  const fl = wert(d, 'flow.durchfluss');
+  $('fluss').textContent = fl.aktuell == null ? '—' : z(fl.aktuell);
+  $('fmin').textContent = fl.min == null ? '—' : z(fl.min);
+  $('fmax').textContent = fl.max == null ? '—' : z(fl.max);
+  $('favg').textContent = fl.schnitt == null ? '—' : z(fl.schnitt);
+  const lw = wert(d, 'flow.leitwert').aktuell, qu = wert(d, 'flow.qualitaet').aktuell, fw = wert(d, 'flow.wasser').aktuell;
+  $('leitwert').textContent = lw == null ? '— µS/cm' : z(lw) + ' µS/cm';
+  $('qualitaet').textContent = qu == null ? '— %' : Math.round(qu) + ' %';
+  $('flusswasser').textContent = fw == null ? '— °C' : z(fw) + ' °C';
+  $('flussbox').dataset.tip = `Durchfluss des Kühlwassers in Liter pro Stunde, gemessen vom high flow NEXT. Gelb ab ${grenzen.flussWarnLh} l/h und weniger, rot ab ${grenzen.flussAlarmLh} l/h und weniger`;
+  $('durchfluss').className = 'panel s5 ' + (fl.status === 'alarm' || fl.status === 'warn' ? fl.status : '');
+  const rpm = icue.filter(w => w.einheit === 'rpm');
+  $('luefter').innerHTML = rpm.map(w => `<div data-tip="${w.name}"><span>${w.name.replace(/^iCUE LINK /, '').replace(/: Lüfter$/, '')}</span><b>${w.aktuell == null ? '—' : Math.round(w.aktuell) + ' rpm'}</b></div>`).join('');
+
+  // Prozessor & Grafik
+  const ct = wert(d, 'cpu.temp');
+  $('cpuname').textContent = (d.hardware.cpu || 'PROZESSOR').toUpperCase();
+  $('cputemp').textContent = ct.aktuell == null ? '—' : Math.round(ct.aktuell);
+  setze('cpuwatt', wert(d, 'cpu.watt').aktuell, 0, ' W');
+  setze('cpulast', wert(d, 'cpu.last').aktuell, 0, ' %');
+  setze('ram', wert(d, 'ram.belegt').aktuell, 1, ' GB');
+  setze('cpumin', ct.min, 1, '°'); setze('cpumax', ct.max, 1, '°'); setze('cpuavg', ct.schnitt, 1, '°');
+  const gt = wert(d, 'gpu.temp'), gh = wert(d, 'gpu.hotspot');
+  $('gpuname').textContent = (d.hardware.gpu || 'GRAFIK').replace(/^AMD /, '').toUpperCase();
+  $('gputemp').textContent = gt.aktuell == null ? '—' : Math.round(gt.aktuell);
+  setze('gpuwatt', wert(d, 'gpu.watt').aktuell, 0, ' W');
+  setze('gpulast', wert(d, 'gpu.last').aktuell, 0, ' %');
+  const gl = wert(d, 'gpu.luefter').aktuell; $('gpuluef').textContent = gl == null ? '— rpm' : Math.round(gl) + ' rpm';
+  setze('gpuhot', gh.aktuell, 1, '°'); setze('gpumax', gt.max, 1, '°'); setze('gpuavg', gt.schnitt, 1, '°');
+
+  // Strom von der FRITZ!DECT-Steckdose
+  const sw = wert(d, 'strom.watt'), sd = d.strom || {};
+  const zahlEinh = (v, st, e) => v == null ? `— <em>${e}</em>` : `${z(v, st)} <em>${e}</em>`;
+  $('sjetzt').innerHTML = zahlEinh(sw.aktuell, 0, 'W');
+  $('sjetzttip').dataset.tip = 'Was der ganze PC gerade an der Steckdose zieht' + (sw.min == null ? '' : ` · seit Programmstart min ${z(sw.min, 0)} W, max ${z(sw.max, 0)} W, Ø ${z(sw.schnitt, 0)} W`);
+  $('sheute').innerHTML = zahlEinh(sd.heuteKWh, 2, 'kWh');
+  $('sheutetip').dataset.tip = 'Verbrauch heute, Standby mitgezählt' + (sd.kostenHeuteEuro == null ? '' : ` · Kosten heute ${z(sd.kostenHeuteEuro, 2)} €`);
+  $('sschnitt').innerHTML = zahlEinh(sd.schnittTagKWh, 2, 'kWh');
+  $('sgesamt').innerHTML = zahlEinh(sd.gesamtKWh, 1, 'kWh');
+  $('skosten').innerHTML = zahlEinh(sd.kostenMonatEuro, 2, '€');
+  $('skostentip').dataset.tip = `Stromkosten in diesem Monat bei ${z(d.strompreisCentProKWh, 2)} Cent/kWh (Preis steht in atomkraftwerk.json)`;
+  const mk = $('strommarke');
+  mk.style.display = sd.verbunden ? 'none' : '';
+  mk.textContent = !sd.eingerichtet ? 'Kennwort fehlt' : 'keine Verbindung';
+  mk.dataset.tip = sd.meldung || 'Verbindung zur FRITZ!Box';
+
+  // Board-Wächter
+  const vrm = wert(d, 'board.vrm'), soc = wert(d, 'board.soc'), pch = wert(d, 'board.pch');
+  $('vrm').textContent = vrm.aktuell == null ? '—' : `${z(vrm.aktuell)} / ${grenzen.vrmAlarmC} °C`;
+  $('soc').textContent = soc.aktuell == null ? '—' : `${z(soc.aktuell, 3)} / ${z(grenzen.socAlarmV, 2)} V`;
+  $('pch').textContent = pch.aktuell == null ? '—' : z(pch.aktuell) + ' °C';
+  $('vrmtip').dataset.tip = `Temperatur der Spannungswandler rund um den CPU-Sockel. Gelb ab ${grenzen.vrmWarnC} °C, rot ab ${grenzen.vrmAlarmC} °C`;
+  $('soctip').dataset.tip = `SoC-Spannung: versorgt Speicher-Controller und Infinity Fabric. Gelb ab ${z(grenzen.socWarnV, 2)} V, rot ab ${z(grenzen.socAlarmV, 2)} V`;
+  $('wasser').dataset.tip = `Kühlwassertemperatur im Behälter, live aus iCUE. Gelb ab ${grenzen.wasserWarnC} °C, rot ab ${grenzen.wasserAlarmC} °C`;
+  leiste('vrmleiste', vrm.aktuell, 20, 110, grenzen.vrmWarnC, grenzen.vrmAlarmC, 0, '°C');
+  leiste('socleiste', soc.aktuell, 1.0, 1.4, grenzen.socWarnV, grenzen.socAlarmV, 2, 'V');
+  $('board').className = 'panel s4 ' + ([vrm.status, soc.status].includes('alarm') ? 'alarm' : [vrm.status, soc.status].includes('warn') ? 'warn' : '');
+}
+
+// Verlauf + Trendpfeil der Wassertemperatur (alle 10 Sekunden)
+async function verlauf() {
+  if (!wasserId) return;
+  let pkt;
+  try { pkt = await (await fetch('/api/verlauf?id=' + encodeURIComponent(wasserId), { cache: 'no-store' })).json(); } catch (e) { return; }
+  if (!pkt.length) return;
+  const n = 60, teil = pkt.slice(-n * 6).filter((_, i, a) => (a.length - 1 - i) % 6 === 0).slice(-n); // ca. alle 30 s ein Balken
+  const vs = teil.map(p => p.v), lo = Math.min(...vs) - 0.3, hi = Math.max(...vs) + 0.3;
+  $('verlauf').innerHTML = teil.map(p => `<div style="height:${Math.max(3, (p.v - lo) / (hi - lo) * 100)}%" data-tip="${p.t} Uhr: ${z(p.v)} °C"></div>`).join('');
+  // Trend: letzte 10 s gegen vor 60 s, Schwelle 0,2 °C
+  if (pkt.length >= 13) {
+    const neu = (pkt.at(-1).v + pkt.at(-2).v) / 2, alt = (pkt.at(-13).v + pkt.at(-12).v) / 2, diff = neu - alt;
+    const pf = $('pfeil');
+    if (diff >= 0.2) { pf.textContent = '▲'; pf.className = 'pfeil steigt'; pf.setAttribute('aria-label', 'steigt'); }
+    else if (diff <= -0.2) { pf.textContent = '▼'; pf.className = 'pfeil faellt'; pf.setAttribute('aria-label', 'fällt'); }
+    else { pf.textContent = '►'; pf.className = 'pfeil steht'; pf.setAttribute('aria-label', 'gleichbleibend'); }
+  }
+}
+
+// Hinweise: sofort beim Drüberfahren, auf dem Handy per Antippen (3 s)
+const tip = document.createElement('div'); tip.className = 'tip'; document.body.appendChild(tip);
+let tipEl = null, tipUhr;
+function tipAus() { tip.style.display = 'none'; tipEl = null; }
+function tipAn(el, x, y) {
+  if (el !== tipEl) { tipEl = el; tip.textContent = el.dataset.tip; tip.style.display = 'block'; }
+  const r = tip.getBoundingClientRect();
+  let l = x + 16, t = y + 18;
+  if (l + r.width > innerWidth - 8) l = x - r.width - 12;
+  if (t + r.height > innerHeight - 8) t = y - r.height - 12;
+  tip.style.left = Math.max(8, l) + 'px'; tip.style.top = Math.max(8, t) + 'px';
+}
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse') return;
+  const el = e.target.closest('[data-tip]');
+  el && el.dataset.tip ? tipAn(el, e.clientX, e.clientY) : tipAus();
+});
+document.documentElement.addEventListener('mouseleave', tipAus);
+addEventListener('scroll', tipAus, { passive: true });
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse') return;
+  const el = e.target.closest('[data-tip]');
+  if (!el || !el.dataset.tip) return tipAus();
+  tipEl = null; tipAn(el, e.clientX, e.clientY);
+  clearTimeout(tipUhr); tipUhr = setTimeout(tipAus, 3000);
+});
+
+// ---------- Auswertung ----------
+let tag = null;
+const farben = ['var(--wasser)', 'var(--bernstein)', 'var(--ok)'];
+const einheitText = w => w.einheit ? ' ' + w.einheit : '';
+const stellen = w => w.einheit === 'V' ? 3 : (w.einheit === 'rpm' || w.einheit === 'W' || w.einheit === '%') ? 0 : 1;
+function kennzahlen(w) {
+  let min = null, max = null, sum = 0, n = 0, tMin = '', tMax = '';
+  w.reihe.forEach((v, i) => {
+    if (v == null) return;
+    if (min == null || v < min) { min = v; tMin = tag.zeiten[i]; }
+    if (max == null || v > max) { max = v; tMax = tag.zeiten[i]; }
+    sum += v; n++;
+  });
+  return { min, max, tMin, tMax, avg: n ? sum / n : null };
+}
+async function tageLaden() {
+  let tage = [];
+  try { tage = await (await fetch('/api/tage', { cache: 'no-store' })).json(); } catch (e) { return; }
+  const d0 = new Date(), heute = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
+  $('atag').innerHTML = tage.map(t => `<option value="${t}">${t === heute ? 'Heute' : t.split('-').reverse().join('.')}</option>`).join('');
+  await tagLaden();
+}
+async function tagLaden() {
+  const datum = $('atag').value; if (!datum) return;
+  try { tag = await (await fetch('/api/tag?datum=' + datum, { cache: 'no-store' })).json(); } catch (e) { return; }
+  const vorher = [1, 2, 3].map(i => $('aw' + i).value);
+  const nutzbar = tag.werte.filter(w => w.reihe.some(v => v != null));
+  let gruppe = '', opts = '<option value="">— keiner —</option>';
+  nutzbar.forEach(w => {
+    if (w.gruppe !== gruppe) { if (gruppe) opts += '</optgroup>'; gruppe = w.gruppe; opts += `<optgroup label="${gruppe || 'Sonstiges'}">`; }
+    opts += `<option value="${w.id}">${w.name}${w.einheit ? ' (' + w.einheit + ')' : ''}</option>`;
+  });
+  if (gruppe) opts += '</optgroup>';
+  const vorschlag = ['flow.durchfluss', nutzbar.find(w => /pumpe/i.test(w.name))?.id || 'cpu.temp', 'strom.watt'];
+  [1, 2, 3].forEach(i => {
+    const sel = $('aw' + i); sel.innerHTML = opts;
+    const wunsch = vorher[i - 1] !== undefined && vorher[i - 1] !== '' && nutzbar.some(w => w.id === vorher[i - 1]) ? vorher[i - 1] : vorschlag[i - 1];
+    sel.value = nutzbar.some(w => w.id === wunsch) ? wunsch : '';
+  });
+  zeichnen(); spitzen();
+}
+function gewaehlt() { return [1, 2, 3].map(i => tag && tag.werte.find(w => w.id === $('aw' + i).value)).map((w, i) => w ? { w, f: farben[i] } : null).filter(Boolean); }
+function zeichnen() {
+  if (!tag) return;
+  const svg = $('asvg'), box = $('adia'), W = box.clientWidth, H = box.clientHeight, L = 8, R = 8, O = 10, U = 24;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const n = tag.zeiten.length, x = i => L + (n <= 1 ? 0 : i / (n - 1)) * (W - L - R);
+  let h = '';
+  for (let k = 0; k <= 4; k++) { const y = O + k * (H - O - U) / 4; h += `<line class="linie-hilf" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/>`; }
+  const schritt = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(W / 90))));
+  for (let i = 0; i < n; i += schritt) h += `<text x="${x(i)}" y="${H - 7}" text-anchor="${i === 0 ? 'start' : 'middle'}">${tag.zeiten[i]}</text>`;
+  gewaehlt().forEach(({ w, f }) => {
+    const k = kennzahlen(w); if (k.min == null) return;
+    const spanne = (k.max - k.min) || 1, unten = k.min - spanne * 0.08, oben = k.max + spanne * 0.08;
+    const y = v => O + (1 - (v - unten) / (oben - unten)) * (H - O - U);
+    let d = '', neu = true;
+    w.reihe.forEach((v, i) => { if (v == null) { neu = true; return; } d += (neu ? 'M' : 'L') + x(i).toFixed(1) + ',' + y(v).toFixed(1); neu = false; });
+    h += `<path d="${d}" fill="none" stroke="${f}" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  });
+  h += `<line class="zeiger" id="azeiger" x1="-10" x2="-10" y1="${O}" y2="${H - U}"/>`;
+  svg.innerHTML = h;
+  $('aleg').innerHTML = gewaehlt().map(({ w, f }) => {
+    const k = kennzahlen(w), st = stellen(w);
+    return `<div class="feld" style="box-shadow:inset 3px 0 0 ${f}" data-tip="Werte für den ganzen Tag (Minuten-Durchschnitte)"><small>${w.name.toUpperCase()}</small><b>min ${z(k.min, st)} · max ${z(k.max, st)} · Ø ${z(k.avg, st)}<em>${einheitText(w)}</em></b><small style="margin-top:4px;letter-spacing:0">Höchstwert um ${k.tMax} Uhr · Tiefstwert um ${k.tMin} Uhr</small></div>`;
+  }).join('');
+  box.dataset.tip = '';
+}
+function zeigen(e) {
+  if (!tag || !tag.zeiten.length) return;
+  const box = $('adia'), r = box.getBoundingClientRect(), L = 8, R = 8, n = tag.zeiten.length;
+  const i = Math.max(0, Math.min(n - 1, Math.round((e.clientX - r.left - L) / (r.width - L - R) * (n - 1))));
+  const xs = L + (n <= 1 ? 0 : i / (n - 1)) * (r.width - L - R);
+  const z1 = $('azeiger'); if (z1) { z1.setAttribute('x1', xs); z1.setAttribute('x2', xs); }
+  const info = $('ainfo');
+  info.innerHTML = `<b>${tag.zeiten[i]} Uhr</b><br>` + gewaehlt().map(({ w, f }) => `<span style="color:${f}">●</span> ${w.name}: ${z(w.reihe[i], stellen(w))}${einheitText(w)}`).join('<br>');
+  info.style.display = 'block';
+  info.style.left = (xs > r.width / 2 ? Math.max(4, xs - info.offsetWidth - 12) : xs + 12) + 'px';
+}
+$('adia').addEventListener('pointermove', zeigen);
+$('adia').addEventListener('pointerdown', zeigen);
+$('adia').addEventListener('pointerleave', () => { $('ainfo').style.display = 'none'; const z1 = $('azeiger'); if (z1) { z1.setAttribute('x1', -10); z1.setAttribute('x2', -10); } });
+function spitzen() {
+  const liste = ['strom.watt', 'cpu.watt', 'gpu.watt', 'cpu.temp', 'gpu.temp', 'gpu.hotspot', 'board.vrm', 'board.soc', 'flow.durchfluss', 'flow.wasser'];
+  const wasser = tag.werte.find(w => w.id.startsWith('icue.') && w.einheit === '°C' && /beh|wasser|coolant/i.test(w.name));
+  if (wasser) liste.splice(9, 0, wasser.id);
+  $('aspitzen').innerHTML = liste.map(id => tag.werte.find(w => w.id === id)).filter(w => w && w.reihe.some(v => v != null)).map(w => {
+    const k = kennzahlen(w), st = stellen(w), e = einheitText(w);
+    return `<tr><td>${w.name}</td><td class="z">${z(k.min, st)}${e}<br><small style="color:var(--stumm)">${k.tMin}</small></td><td class="z">${z(k.max, st)}${e}<br><small style="color:var(--stumm)">${k.tMax}</small></td><td class="z">${z(k.avg, st)}${e}</td></tr>`;
+  }).join('');
+}
+['aw1', 'aw2', 'aw3'].forEach(id => $(id).addEventListener('change', zeichnen));
+$('atag').addEventListener('change', tagLaden);
+addEventListener('resize', zeichnen);
+setInterval(() => { if ($('atag').selectedIndex === 0) tagLaden(); }, 60000);
+tageLaden();
+
+laden().then(verlauf);
+setInterval(laden, 2000);
+setInterval(verlauf, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Platforms>x64</Platforms>
+    <AssemblyName>InfoPanel.Atomkraftwerk</AssemblyName>
+    <RootNamespace>InfoPanel.Atomkraftwerk</RootNamespace>
+    <InfoPanelSrc Condition="'$(InfoPanelSrc)' == ''">..\..\infopanel</InfoPanelSrc>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(InfoPanelSrc)\InfoPanel.Plugins\InfoPanel.Plugins.csproj">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="PluginInfo.ini"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,3 @@
+Hier die DLLs aus dem InfoPanel-Programmordner (C:\Program Files (x86)\InfoPanel) hineinkopieren:
+LibreHardwareMonitorLib.dll, HidSharp.dll, BlackSharp.Core.dll, DiskInfoToolkit.dll, RAMSPDToolkit-NDD.dll,
+Mono.Posix.NETStandard.dll, System.CodeDom.dll, System.IO.Ports.dll, System.Management.dll, System.Threading.AccessControl.dll

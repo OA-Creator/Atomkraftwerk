@@ -1,0 +1,185 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Xml.Linq;
+
+namespace Atomkraftwerk;
+
+// ---------------------------------------------------------------
+// Strom: FRITZ!DECT-Steckdose über die FRITZ!Box (AHA-Schnittstelle)
+// ---------------------------------------------------------------
+public class FritzEinstellungen
+{
+    public string Adresse { get; set; } = "http://fritz.box";
+    public string Benutzer { get; set; } = "atomkraftwerk";
+    public string Kennwort { get; set; } = "";
+    public string Ain { get; set; } = "";
+    public int AbfrageSekunden { get; set; } = 10;
+}
+
+public sealed class StromStand
+{
+    public bool Eingerichtet { get; set; }
+    public bool Verbunden { get; set; }
+    public string Meldung { get; set; } = "";
+    public double? HeuteKWh { get; set; }
+    public double? MonatKWh { get; set; }
+    public double? SchnittTagKWh { get; set; }
+    public double? GesamtKWh { get; set; }
+    public double? KostenHeuteEuro { get; set; }
+    public double? KostenMonatEuro { get; set; }
+    public string Stand { get; set; } = "";
+}
+
+public sealed class FritzQuelle
+{
+    private readonly FritzEinstellungen _f;
+    private readonly double _preisCent;
+    private readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(8) };
+    private string _sid = "0000000000000000";
+    private DateTime _naechsterLoginVersuch = DateTime.MinValue;
+    private DateTime _letzteStatistik = DateTime.MinValue;
+    private double? _watt;
+    public StromStand Stand { get; } = new();
+
+    private readonly string _beginnDatei;
+    private DateTime? _messbeginn;
+
+    public FritzQuelle(Einstellungen e, string datenOrdner)
+    {
+        // Tag, an dem die Strommessung begann (für einen ehrlichen Ø pro Tag im ersten Monat)
+        _beginnDatei = Path.Combine(datenOrdner, "strom-beginn.txt");
+        try
+        {
+            if (File.Exists(_beginnDatei) && DateTime.TryParse(File.ReadAllText(_beginnDatei).Trim(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var b))
+                _messbeginn = b.Date;
+        }
+        catch { }
+        _f = e.Fritz;
+        _preisCent = e.StrompreisCentProKWh;
+        Stand.Eingerichtet = !string.IsNullOrWhiteSpace(_f.Kennwort);
+        Stand.Meldung = Stand.Eingerichtet ? "verbinde …" : "Kennwort in atomkraftwerk.json fehlt";
+    }
+
+    // Läuft im Hintergrund, damit eine langsame FRITZ!Box den Messlauf nicht aufhält
+    public async Task LaufenAsync(CancellationToken stopp)
+    {
+        if (!Stand.Eingerichtet) { Log.Schreiben("Strom: kein FRITZ!Box-Kennwort eingetragen."); return; }
+        while (!stopp.IsCancellationRequested)
+        {
+            try { await EinmalAsync(); }
+            catch (Exception ex)
+            {
+                Stand.Verbunden = false; _watt = null;
+                Stand.Meldung = "FRITZ!Box nicht erreichbar";
+                Log.Schreiben("Strom: " + ex.Message);
+            }
+            try { await Task.Delay(TimeSpan.FromSeconds(Math.Max(5, _f.AbfrageSekunden)), stopp); } catch { break; }
+        }
+    }
+
+    public double? Watt => _watt;
+
+    private async Task EinmalAsync()
+    {
+        if (!await AngemeldetAsync()) return;
+
+        var mw = await BefehlAsync("getswitchpower");
+        if (mw is null) return; // Sitzung abgelaufen -> nächster Durchlauf meldet neu an
+        _watt = double.TryParse(mw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var m) ? m / 1000.0 : null;
+
+        // Verbrauchsverlauf der FRITZ!Box alle 5 Minuten (zählt auch Nacht und Standby)
+        if ((DateTime.Now - _letzteStatistik).TotalMinutes >= 5)
+        {
+            var gesamt = await BefehlAsync("getswitchenergy");
+            if (gesamt is not null && double.TryParse(gesamt.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var wh))
+                Stand.GesamtKWh = wh / 1000.0;
+
+            var xml = await BefehlAsync("getbasicdevicestats");
+            if (xml is not null) StatistikAuswerten(xml);
+            _letzteStatistik = DateTime.Now;
+        }
+        Stand.Verbunden = _watt is not null;
+        Stand.Meldung = Stand.Verbunden ? "" : "Steckdose meldet keinen Wert";
+        Stand.Stand = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private void StatistikAuswerten(string xml)
+    {
+        var doc = XDocument.Parse(xml);
+        var energie = doc.Root?.Element("energy");
+        if (energie is null) return;
+        foreach (var st in energie.Elements("stats"))
+        {
+            var grid = (int?)st.Attribute("grid") ?? 0;
+            var werte = st.Value.Split(',').Select(w => double.TryParse(w.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : (double?)null).ToList();
+            if (werte.Count == 0) continue;
+            if (grid == 86400) Stand.HeuteKWh = werte[0] / 1000.0;          // Tageswerte, neuester zuerst
+            else if (grid >= 2419200) Stand.MonatKWh = werte[0] / 1000.0;   // Monatswerte, neuester zuerst
+        }
+        if (_messbeginn is null)
+        {
+            _messbeginn = DateTime.Today;
+            try { File.WriteAllText(_beginnDatei, DateTime.Today.ToString("yyyy-MM-dd")); } catch { }
+        }
+        var monatsAnfang = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+        var ab = _messbeginn.Value > monatsAnfang ? _messbeginn.Value : monatsAnfang;
+        var tage = (DateTime.Today - ab).Days + 1;
+        if (Stand.MonatKWh is not null) Stand.SchnittTagKWh = Stand.MonatKWh / Math.Max(1, tage);
+        Stand.KostenHeuteEuro = Stand.HeuteKWh * _preisCent / 100.0;
+        Stand.KostenMonatEuro = Stand.MonatKWh * _preisCent / 100.0;
+    }
+
+    private async Task<string?> BefehlAsync(string befehl)
+    {
+        var url = $"{_f.Adresse.TrimEnd('/')}/webservices/homeautoswitch.lua?ain={Uri.EscapeDataString(_f.Ain.Replace(" ", ""))}&switchcmd={befehl}&sid={_sid}";
+        using var antwort = await _http.GetAsync(url);
+        if ((int)antwort.StatusCode == 403) { _sid = "0000000000000000"; return null; }
+        antwort.EnsureSuccessStatusCode();
+        return await antwort.Content.ReadAsStringAsync();
+    }
+
+    // ---------- Anmeldung (FRITZ!OS: PBKDF2, ältere Boxen: MD5) ----------
+    private async Task<bool> AngemeldetAsync()
+    {
+        if (_sid != "0000000000000000") return true;
+        if (DateTime.Now < _naechsterLoginVersuch) return false;
+
+        var basis = _f.Adresse.TrimEnd('/') + "/login_sid.lua?version=2";
+        var info = XDocument.Parse(await _http.GetStringAsync(basis)).Root!;
+        var challenge = info.Element("Challenge")?.Value ?? "";
+        var antwortText = challenge.StartsWith("2$") ? Pbkdf2Antwort(challenge, _f.Kennwort) : Md5Antwort(challenge, _f.Kennwort);
+
+        using var inhalt = new FormUrlEncodedContent(new Dictionary<string, string> { ["username"] = _f.Benutzer, ["response"] = antwortText });
+        var ergebnis = XDocument.Parse(await (await _http.PostAsync(basis, inhalt)).Content.ReadAsStringAsync()).Root!;
+        _sid = ergebnis.Element("SID")?.Value ?? "0000000000000000";
+        if (_sid == "0000000000000000")
+        {
+            // Falsches Kennwort: nicht dauernd probieren, sonst sperrt die FRITZ!Box
+            _naechsterLoginVersuch = DateTime.Now.AddMinutes(5);
+            Stand.Verbunden = false; _watt = null;
+            Stand.Meldung = "Anmeldung an der FRITZ!Box abgelehnt (Benutzer/Kennwort prüfen)";
+            Log.Schreiben("Strom: " + Stand.Meldung);
+            return false;
+        }
+        Log.Schreiben("Strom: an der FRITZ!Box angemeldet.");
+        return true;
+    }
+
+    private static string Pbkdf2Antwort(string challenge, string kennwort)
+    {
+        var t = challenge.Split('$');
+        int iter1 = int.Parse(t[1]), iter2 = int.Parse(t[3]);
+        var salt1 = Convert.FromHexString(t[2]);
+        var salt2 = Convert.FromHexString(t[4]);
+        var hash1 = Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(kennwort), salt1, iter1, HashAlgorithmName.SHA256, 32);
+        var hash2 = Rfc2898DeriveBytes.Pbkdf2(hash1, salt2, iter2, HashAlgorithmName.SHA256, 32);
+        return t[4] + "$" + Convert.ToHexString(hash2).ToLowerInvariant();
+    }
+
+    private static string Md5Antwort(string challenge, string kennwort)
+    {
+        var bytes = Encoding.Unicode.GetBytes(challenge + "-" + kennwort);
+        return challenge + "-" + Convert.ToHexString(MD5.HashData(bytes)).ToLowerInvariant();
+    }
+}

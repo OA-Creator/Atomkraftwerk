@@ -1,0 +1,27 @@
+{
+  "_hinweis": "Zentrale Einstellungen des Atomkraftwerks. Nach Aenderungen das Programm neu starten.",
+  "port": 8090,
+  "intervallSekunden": 1,
+  "icueOrdner": "",
+  "datenOrdner": "daten",
+  "grenzen": {
+    "vrmWarnC": 80,
+    "vrmAlarmC": 90,
+    "socWarnV": 1.28,
+    "socAlarmV": 1.30,
+    "cpuAlarmC": 90,
+    "gpuHotspotAlarmC": 105,
+    "wasserWarnC": 35,
+    "wasserAlarmC": 40,
+    "flussWarnLh": 25,
+    "flussAlarmLh": 15
+  },
+  "strompreisCentProKWh": 30.0,
+  "fritz": {
+    "adresse": "http://fritz.box",
+    "benutzer": "atomkraftwerk",
+    "kennwort": "",
+    "ain": "",
+    "abfrageSekunden": 10
+  }
+}

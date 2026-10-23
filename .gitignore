@@ -1,0 +1,6 @@
+bin/
+obj/
+Programm/lib/*.dll
+Programm/daten/
+*.log
+beenden.flag
