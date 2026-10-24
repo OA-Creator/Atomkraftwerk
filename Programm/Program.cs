@@ -30,6 +30,9 @@ try
 catch (Exception ex) { Log.Schreiben("Hardware nicht lesbar (Admin-Rechte?): " + ex.Message); }
 
 var icue = new IcueQuelle(e);
+var pumpe = new PumpenSteuerung(e, ordner);
+pumpe.Verbinden(hw);
+icue.PumpeVomBoard = pumpe.Gefunden;
 var stopp = new CancellationTokenSource();
 var fritz = new FritzQuelle(e, anlage.DatenOrdner);
 anlage.Strom = fritz.Stand;
@@ -40,10 +43,14 @@ Server? server = null;
 try
 {
     server = new Server(anlage, e.Port, ordner);
+    server.Auswertung = new Auswertung(anlage, fritz);
+    server.Pumpe = pumpe;
     _ = server.LaufenAsync(stopp.Token);
     Log.Schreiben("Leitstand erreichbar: " + server.Adresse);
 }
 catch (Exception ex) { Log.Schreiben("Webserver startet nicht: " + ex.Message); }
+
+var alarm = new AlarmMelder(e, ordner);
 
 var letzteMinute = DateTime.Now.Minute;
 var intervall = TimeSpan.FromSeconds(Math.Max(1, e.IntervallSekunden));
@@ -56,9 +63,11 @@ while (!stopp.IsCancellationRequested)
     {
         hw?.Lesen(anlage);
         icue.Lesen(anlage);
+        pumpe.Arbeiten(anlage);
         anlage.Wert("strom.watt").Setzen(fritz.Watt);
         anlage.IcueDatei = icue.Datei; anlage.IcueStand = icue.Stand; anlage.IcueLaeuft = icue.Laeuft;
         anlage.Bewerten();
+        alarm.Pruefen(anlage);
         anlage.LaufzeitZaehlen();
         if (DateTime.Now.Minute != letzteMinute)
         {
@@ -71,6 +80,7 @@ while (!stopp.IsCancellationRequested)
 }
 
 anlage.MinuteSpeichern();
+pumpe.Freigeben();
 server?.Stop();
 hw?.Dispose();
 Log.Schreiben("Atomkraftwerk beendet.");

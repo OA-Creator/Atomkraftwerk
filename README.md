@@ -4,12 +4,14 @@
 
 Ein kleines Windows-Programm sammelt jede Sekunde die wichtigen Werte eines wassergekühlten PCs und zeigt sie als Leitstand im Browser an, am PC und am Handy im Heimnetz.
 
-- **Kühlung:** Wassertemperatur, Pumpe und Lüfter aus der iCUE-Sensorprotokollierung, mit Trendpfeil und 30-Minuten-Verlauf
+- **Kühlung:** Wassertemperatur und Lüfter aus der iCUE-Sensorprotokollierung, mit Trendpfeil und 30-Minuten-Verlauf
 - **Durchfluss:** Aquacomputer high flow NEXT über USB (l/h, Leitfähigkeit, Wasserqualität, Temperatur)
+- **Pumpensteuerung:** Pumpe am Board-Anschluss (z. B. CPU_OPT) – Startschub beim Start, dann **Automatik nach Durchfluss** (so langsam wie möglich, aber z. B. 60 l/h) oder **Hand** 25–100 %, alles im Leitstand einstellbar; beim Beenden übernimmt wieder das BIOS
 - **Prozessor & Grafik:** Temperatur, Leistung, Last, RAM (über LibreHardwareMonitor)
 - **Board-Wächter:** VRM-Temperatur und SoC-Spannung mit gelber/roter Grenze
 - **Strom:** FRITZ!DECT-200-Steckdose über die FRITZ!Box – Watt jetzt, Verbrauch heute, Ø pro Tag im Monat, Gesamt, Kosten (Standby zählt mit)
-- **Auswertung:** beliebigen Tag wählen, bis zu drei Werte als Kurve übereinander, Min/Max/Ø mit Uhrzeit, Spitzen des Tages
+- **Auswertung:** Heute/Woche/Monat/Quartal/Jahr, Spitzen des Tages und **Kühlung-Check** (Abstand CPU zu Wasser bei gleicher Last – zeigt, ob sich der Kühler zusetzt)
+- **Alarm:** wird ein Wert rot, springt ein Fenster über allem auf – mit 45-Sekunden-Countdown und Knopf „Jetzt herunterfahren" – und eine Meldung geht aufs Handy (**ntfy** für Android, **Pushover** für iPhone, beide auch bei „Nicht stören")
 - Min / Max / Ø für jeden Wert, Hell/Dunkel, QR-Code zum Öffnen am Handy, Hinweise per Maus-Tooltip
 - Dazu ein **InfoPanel-Plugin**, das Durchfluss, Ø-Durchfluss und PC-Watt auf ein InfoPanel-Display bringt
 
@@ -40,12 +42,20 @@ Beenden: **„Atomkraftwerk beenden.bat"** · Autostart wieder weg: **„Autosta
 | `port` | Port des Leitstands (Standard 8090) |
 | `icueOrdner` | Ordner der iCUE-Protokolldateien, leer = Dokumente |
 | `grenzen` | Warn- und Alarmgrenzen (VRM, SoC, CPU, GPU-Hotspot, Wasser, Durchfluss) |
+| `grenzen.flussAlarmAbWasserC` | Durchfluss wird nur rot, wenn das Wasser zugleich mindestens so warm ist (0 = immer) – hilft bei hängendem Messrad |
+| `alarmFenster` / `alarmAbschaltenSekunden` | Alarmfenster ein/aus, Sekunden bis zum automatischen Herunterfahren (0 = nur per Knopf) |
+| `handy.ntfyThema` | eigenes, geheimes Thema für die App ntfy (Android) |
+| `handy.pushoverToken` / `handy.pushoverBenutzer` | API-Token der eigenen Pushover-Anwendung und User Key (iPhone) |
+| `pumpe.anschluss` | Board-Anschluss der Pumpe, wie er im Log unter „Board-Anschlüsse" steht (z. B. `Fan #6`), leer = keine Pumpensteuerung |
+| `pumpe.betrieb` / `zielFluss` / `handProzent` | `auto` (Ziel-Durchfluss in l/h) oder `hand` (feste Ansteuerung in %) – wird auch im Leitstand eingestellt |
 | `strompreisCentProKWh` | Strompreis für die Kostenanzeige |
 | `fritz.adresse` | Adresse der FRITZ!Box, meist `http://fritz.box` |
 | `fritz.benutzer` / `fritz.kennwort` | eigener FRITZ!Box-Benutzer, der **nur** das Recht „Smart Home" hat |
 | `fritz.ain` | AIN der Steckdose (FRITZ!Box → Smart Home → Gerät → Allgemein), ohne Leerzeichen |
 
-Das Kennwort steht nur in dieser Datei auf dem eigenen PC – **nie mit hochladen**.
+Kennwort, ntfy-Thema und Pushover-Schlüssel stehen nur in dieser Datei auf dem eigenen PC – **nie mit hochladen**.
+
+Zum Testen: **„Alarmfenster testen.bat"** (zeigt das Fenster, fährt nicht herunter) und **„Handy-Alarm testen.bat"** (schickt eine Testmeldung).
 
 ## InfoPanel-Plugin
 
@@ -67,6 +77,7 @@ Zusätzlich die gleichen Werte als Zahlen-Sensoren. Für die Wassertemperatur mi
 ## Hinweise
 
 - Die Board-Sensoren sind für das **Gigabyte X870E Aorus Elite WiFi7 (ITE IT8696E)** zugeordnet (`Quellen.cs`). Andere Boards brauchen eine eigene Zuordnung.
+- Pumpensteuerung: im BIOS für den Pumpenanschluss eine sichere Grundeinstellung setzen – die gilt immer, wenn das Programm nicht läuft. Gigabyte Control Center nicht parallel betreiben (greift auf denselben Board-Chip zu).
 - Die Laufzeit zählt nur, solange das Programm läuft; der Stromverbrauch kommt aus der FRITZ!Box und zählt auch bei ausgeschaltetem PC.
 - Enthält [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (MPL 2.0) und HidSharp (Apache 2.0) im Release-Zip.
 

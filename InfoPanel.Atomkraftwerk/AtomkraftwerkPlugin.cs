@@ -17,7 +17,9 @@ public class AtomkraftwerkPlugin : BasePlugin
     private readonly PluginText _pcWatt = new("pc-watt", "PC Leistung (Anzeige)", "PC --- W");
     private readonly PluginSensor _flussWert = new("fluss-wert", "Durchfluss", 0, "l/h");
     private readonly PluginSensor _flussSchnittWert = new("fluss-avg-wert", "Durchfluss Ø", 0, "l/h");
-    private readonly PluginSensor _wattWert = new("pc-watt-wert", "PC Leistung", 0, "W");
+    private readonly PluginSensor _wattWert = new("pc-watt-wert", "PC Power", 0, "W");
+    private readonly PluginText _pumpe = new("pumpe", "Pumpe (Anzeige)", "Pump --- rpm");
+    private readonly PluginSensor _pumpeWert = new("pumpe-wert", "Pump", 0, "rpm");
     private readonly PluginText _status = new("status", "Verbindung", "-");
 
     public AtomkraftwerkPlugin() : base("atomkraftwerk", "Atomkraftwerk", "Durchfluss und Strom vom Atomkraftwerk-Leitstand") { }
@@ -32,6 +34,7 @@ public class AtomkraftwerkPlugin : BasePlugin
         var c = new PluginContainer("akw", "Atomkraftwerk");
         c.Entries.Add(_fluss); c.Entries.Add(_flussSchnitt); c.Entries.Add(_pcWatt);
         c.Entries.Add(_flussWert); c.Entries.Add(_flussSchnittWert); c.Entries.Add(_wattWert);
+        c.Entries.Add(_pumpe); c.Entries.Add(_pumpeWert);
         c.Entries.Add(_status);
         containers.Add(c);
     }
@@ -42,12 +45,13 @@ public class AtomkraftwerkPlugin : BasePlugin
         {
             var json = await _http.GetStringAsync(Adresse, cancellationToken);
             using var doc = JsonDocument.Parse(json);
-            double? fluss = null, schnitt = null, watt = null;
+            double? fluss = null, schnitt = null, watt = null, pumpe = null;
             foreach (var w in doc.RootElement.GetProperty("werte").EnumerateArray())
             {
                 var id = w.GetProperty("id").GetString();
                 if (id == "flow.durchfluss") { fluss = Zahl(w, "aktuell"); schnitt = Zahl(w, "schnitt"); }
                 else if (id == "strom.watt") watt = Zahl(w, "aktuell");
+                else if (id != null && id.StartsWith("icue.") && (w.GetProperty("name").GetString() ?? "").Contains("pumpe", StringComparison.OrdinalIgnoreCase)) pumpe = Zahl(w, "aktuell");
             }
             _fluss.Value = fluss is null ? "--- l/h" : $"{Math.Round(fluss.Value).ToString("0", Punkt)} l/h";
             _flussSchnitt.Value = schnitt is null ? "(Ø --- l/h)" : $"(Ø {schnitt.Value.ToString("0.0", Punkt)} l/h)";
@@ -55,11 +59,13 @@ public class AtomkraftwerkPlugin : BasePlugin
             _flussWert.Value = (float)(fluss ?? 0);
             _flussSchnittWert.Value = (float)(schnitt ?? 0);
             _wattWert.Value = (float)(watt ?? 0);
+            _pumpe.Value = pumpe is null ? "Pump --- rpm" : $"Pump {Math.Round(pumpe.Value).ToString("0", Punkt)} rpm";
+            _pumpeWert.Value = (float)(pumpe ?? 0);
             _status.Value = "verbunden";
         }
         catch
         {
-            _fluss.Value = "--- l/h"; _flussSchnitt.Value = "(Ø --- l/h)"; _pcWatt.Value = "PC --- W";
+            _fluss.Value = "--- l/h"; _flussSchnitt.Value = "(Ø --- l/h)"; _pcWatt.Value = "PC --- W"; _pumpe.Value = "Pump --- rpm";
             _status.Value = "Atomkraftwerk nicht erreichbar";
         }
     }

@@ -109,13 +109,14 @@ public sealed class FritzQuelle
         var doc = XDocument.Parse(xml);
         var energie = doc.Root?.Element("energy");
         if (energie is null) return;
+        List<double?>? tagesWerte = null, monatsWerte = null;
         foreach (var st in energie.Elements("stats"))
         {
             var grid = (int?)st.Attribute("grid") ?? 0;
             var werte = st.Value.Split(',').Select(w => double.TryParse(w.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : (double?)null).ToList();
             if (werte.Count == 0) continue;
-            if (grid == 86400) Stand.HeuteKWh = werte[0] / 1000.0;          // Tageswerte, neuester zuerst
-            else if (grid >= 2419200) Stand.MonatKWh = werte[0] / 1000.0;   // Monatswerte, neuester zuerst
+            if (grid == 86400) { Stand.HeuteKWh = werte[0] / 1000.0; tagesWerte = werte; }        // Tageswerte, neuester zuerst
+            else if (grid >= 2419200) { Stand.MonatKWh = werte[0] / 1000.0; monatsWerte = werte; } // Monatswerte, neuester zuerst
         }
         if (_messbeginn is null)
         {
@@ -128,6 +129,50 @@ public sealed class FritzQuelle
         if (Stand.MonatKWh is not null) Stand.SchnittTagKWh = Stand.MonatKWh / Math.Max(1, tage);
         Stand.KostenHeuteEuro = Stand.HeuteKWh * _preisCent / 100.0;
         Stand.KostenMonatEuro = Stand.MonatKWh * _preisCent / 100.0;
+        VerlaufSpeichern(tagesWerte, monatsWerte);
+    }
+
+    // Verbrauch pro Tag und Monat dauerhaft ablegen (FRITZ!Box hält nur 31 Tage / 24 Monate)
+    public sealed class StromVerlauf
+    {
+        public SortedDictionary<string, double> Tage { get; set; } = new();
+        public SortedDictionary<string, double> Monate { get; set; } = new();
+    }
+    public string VerlaufDatei => Path.Combine(Path.GetDirectoryName(_beginnDatei)!, "strom-verlauf.json");
+    private readonly object _verlaufSperre = new();
+
+    public StromVerlauf VerlaufLesen()
+    {
+        lock (_verlaufSperre)
+        {
+            try { if (File.Exists(VerlaufDatei)) return System.Text.Json.JsonSerializer.Deserialize<StromVerlauf>(File.ReadAllText(VerlaufDatei), Einstellungen.Json) ?? new(); }
+            catch { }
+            return new();
+        }
+    }
+
+    private void VerlaufSpeichern(List<double?>? tage, List<double?>? monate)
+    {
+        var v = VerlaufLesen();
+        var beginn = _messbeginn ?? DateTime.Today;
+        if (tage != null)
+            for (int i = 0; i < tage.Count; i++)
+            {
+                var d = DateTime.Today.AddDays(-i);
+                if (d < beginn || tage[i] is null) continue;
+                v.Tage[d.ToString("yyyy-MM-dd")] = Math.Round(tage[i]!.Value / 1000.0, 3);
+            }
+        if (monate != null)
+            for (int i = 0; i < monate.Count; i++)
+            {
+                var d = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(-i);
+                if (d < new DateTime(beginn.Year, beginn.Month, 1) || monate[i] is null) continue;
+                v.Monate[d.ToString("yyyy-MM")] = Math.Round(monate[i]!.Value / 1000.0, 3);
+            }
+        lock (_verlaufSperre)
+        {
+            try { File.WriteAllText(VerlaufDatei, System.Text.Json.JsonSerializer.Serialize(v, Einstellungen.Json)); } catch { }
+        }
     }
 
     private async Task<string?> BefehlAsync(string befehl)

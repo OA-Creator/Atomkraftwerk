@@ -8,14 +8,14 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&family=Exo:wght@600&display=swap" rel="stylesheet">
 <style>
 :root{
   --grund:#0B0E11; --kopf:#0F1317; --panel:#12171C; --feld:#0E1216; --linie:#222A31; --linie2:#2A333B;
-  --text:#E6EAEE; --text2:#C3CBD3; --leise:#8C98A4; --stumm:#6B7681; --aus:#5A6670;
+  --text:#E6EAEE; --text2:#C3CBD3; --leise:#B3BDC7; --stumm:#8F9AA6; --aus:#5A6670;
   --bernstein:#F2A33A; --wasser:#5BC8E0; --ok:#4CC77A; --ok-grund:#12221A; --ok-rand:#2C5A3A; --ok-text:#9FE2B3;
   --warn:#F2C46B; --warn-grund:#2A2112; --warn-rand:#5A4220; --alarm:#FF6B70; --alarm-grund:#2A1416; --alarm-rand:#6A2A2E;
-  --balken:#1F3A44; --aktiv:#1B2229;
+  --balken:#1F3A44; --aktiv:#1B2229; --gruen:#39D353; --rahmen:rgba(57,211,83,.28);
   --mono:'JetBrains Mono',ui-monospace,Consolas,monospace; --schmal:'Barlow Condensed','Arial Narrow',sans-serif; --sans:Barlow,system-ui,'Segoe UI',sans-serif;
 }
 :root[data-theme="hell"]{
@@ -23,7 +23,7 @@
   --text:#14181C; --text2:#2E363E; --leise:#56616C; --stumm:#5F6A75; --aus:#8D97A1;
   --bernstein:#B86A00; --wasser:#0B7F9A; --ok:#1E8B4C; --ok-grund:#E3F4EA; --ok-rand:#9ED3B3; --ok-text:#16683A;
   --warn:#8A5A00; --warn-grund:#FFF2D9; --warn-rand:#E7C27A; --alarm:#C2262C; --alarm-grund:#FDE5E6; --alarm-rand:#EBA2A5;
-  --balken:#BFE3EC; --aktiv:#EEF1F4;
+  --balken:#BFE3EC; --aktiv:#EEF1F4; --gruen:#1F9E3D; --rahmen:rgba(31,158,61,.35);
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--grund);color:var(--text);font-family:var(--sans)}
@@ -32,7 +32,7 @@ button{font:inherit}
 .kopf{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;padding:14px 24px;border-bottom:1px solid var(--linie);background:var(--kopf);position:sticky;top:0;z-index:5}
 .marke{display:flex;align-items:center;gap:12px}
 .marke b{display:block;font-family:var(--schmal);font-weight:700;font-size:24px;letter-spacing:.08em;line-height:1}
-.marke small{display:block;font-size:12px;color:var(--leise);letter-spacing:.14em;margin-top:3px}
+.marke small{display:block;font-size:12px;color:var(--text2);letter-spacing:.14em;margin-top:7px}
 .rechts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .pille{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:14px;border:1px solid var(--ok-rand);background:var(--ok-grund);color:var(--ok-text)}
 .pille i{width:9px;height:9px;border-radius:50%;background:var(--ok)}
@@ -50,20 +50,22 @@ nav.seite a.an{background:var(--aktiv);color:var(--bernstein);font-weight:600;bo
 nav.seite a.spaeter{color:var(--aus)}
 nav.seite a.spaeter span{font-size:12px;border:1px solid var(--linie2);border-radius:4px;padding:1px 6px}
 main{flex:999 1 640px;min-width:0;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;align-content:start}
-.panel{background:var(--panel);border:1px solid var(--linie);border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px;scroll-margin-top:90px}
+.panel{background:var(--panel);border:1px solid var(--rahmen);box-shadow:inset 3px 0 0 var(--gruen);border-radius:12px;padding:16px 22px 22px;display:flex;flex-direction:column;gap:16px;scroll-margin-top:90px}
 .panel.warn{border-color:var(--warn-rand)} .panel.alarm{border-color:var(--alarm);box-shadow:0 0 0 1px var(--alarm) inset}
-.panel h2{margin:0;font-family:var(--schmal);font-weight:600;font-size:15px;letter-spacing:.16em;color:var(--leise);display:flex;justify-content:space-between;gap:8px}
+.panel h2{margin:0;line-height:1;align-items:center;font-family:'Exo',var(--schmal);font-weight:600;font-size:18px;letter-spacing:.14em;color:var(--text);display:flex;justify-content:space-between;gap:8px}
 .panel h2 span{font-family:var(--sans);font-weight:400;letter-spacing:0;font-size:13px;color:var(--stumm)}
 .s7{grid-column:span 7}.s5{grid-column:span 5}.s4{grid-column:span 4}.s12{grid-column:span 12}
 .gross{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
 .zahl{font-family:var(--mono);font-weight:700;line-height:.9;letter-spacing:-.03em}
 .einh{color:var(--leise)}
-.pfeil{font-size:40px;line-height:1}
+.pfeil{font-size:40px;line-height:1;align-self:center}
+.pumpe{margin:0 auto;align-self:center;font-family:var(--mono);font-size:24px;font-weight:700;color:var(--bernstein)}
 .pfeil.steigt{color:var(--alarm)} .pfeil.faellt{color:var(--ok)} .pfeil.steht{color:var(--leise)}
 .felder{display:grid;gap:10px}
-.feld{background:var(--feld);border-radius:8px;padding:11px 13px;min-width:0}
-.feld small{display:block;font-size:12px;letter-spacing:.12em;color:var(--stumm)}
+.feld{background:var(--feld);border-radius:8px;padding:7px 13px 11px;min-width:0}
+.feld small{display:block;font-size:13.5px;font-weight:600;letter-spacing:.1em;color:var(--leise)}
 .feld b{display:block;font-family:var(--mono);font-weight:500;font-size:21px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feld.warn b{color:var(--warn)} .feld.alarm b{color:var(--alarm)}
 .feld b em{font-style:normal;font-size:14px;color:var(--leise)}
 .verlauf{height:70px;display:flex;align-items:flex-end;gap:2px}
 .verlauf div{flex:1;background:var(--balken);border-radius:2px 2px 0 0;min-height:2px}
@@ -95,8 +97,10 @@ dialog#qr::backdrop{background:rgba(0,0,0,.6)}
 .steuer select{min-height:44px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 10px;font:inherit;font-size:15px;max-width:100%}
 .steuer select:focus{outline:2px solid var(--bernstein);outline-offset:1px}
 .steuer .wahl{display:flex;align-items:center;gap:8px;min-width:0}
+.steuer .dazu{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;background:var(--feld);border:1px solid var(--linie2);border-radius:8px;font-size:15px;cursor:pointer;user-select:none}
+.steuer .dazu input{accent-color:var(--bernstein);width:18px;height:18px;margin:0}
 .steuer .punkt{width:12px;height:12px;border-radius:50%;flex:none}
-.diagramm{position:relative;width:100%;height:320px;background:var(--feld);border-radius:8px;touch-action:none}
+.diagramm{position:relative;width:100%;height:300px;background:var(--feld);border-radius:8px;touch-action:none}
 .diagramm svg{display:block;width:100%;height:100%}
 .diagramm .linie-hilf{stroke:var(--linie);stroke-width:1}
 .diagramm text{fill:var(--stumm);font-family:var(--mono);font-size:11px}
@@ -104,6 +108,10 @@ dialog#qr::backdrop{background:rgba(0,0,0,.6)}
 .diagramm .info{position:absolute;top:8px;pointer-events:none;background:var(--kopf);border:1px solid var(--bernstein);border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:13px;line-height:1.5;white-space:nowrap;display:none}
 .legende{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 .legende .feld b{font-size:16px}
+details.aufklapp summary{cursor:pointer;font-family:'Exo',var(--schmal);font-weight:600;font-size:15px;letter-spacing:.16em;color:var(--leise);padding:8px 0;list-style:none}
+details.aufklapp summary::-webkit-details-marker{display:none}
+details.aufklapp summary::before{content:"▸ ";color:var(--bernstein)}
+details.aufklapp[open] summary::before{content:"▾ "}
 table.spitzen{width:100%;border-collapse:collapse;font-size:15px}
 table.spitzen td,table.spitzen th{padding:7px 4px;border-bottom:1px solid var(--linie);text-align:left}
 table.spitzen th{font-family:var(--schmal);letter-spacing:.12em;font-weight:600;font-size:13px;color:var(--stumm)}
@@ -178,7 +186,7 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
 
     <section class="panel s5" id="durchfluss">
       <h2>DURCHFLUSS <span>high flow NEXT</span></h2>
-      <div class="gross" id="flussbox" data-tip="Durchfluss des Kühlwassers in Liter pro Stunde, gemessen vom high flow NEXT"><span class="zahl" style="font-size:60px;color:var(--wasser)" id="fluss">—</span><span class="einh" style="font-size:22px">l/h</span></div>
+      <div class="gross" id="flussbox" data-tip="Durchfluss des Kühlwassers in Liter pro Stunde, gemessen vom high flow NEXT"><span class="zahl" style="font-size:60px;color:var(--wasser)" id="fluss">—</span><span class="einh" style="font-size:22px">l/h</span><span class="pumpe" id="pumpe" data-tip="Drehzahl der Pumpe">Pumpe — rpm</span></div>
       <div class="felder" style="grid-template-columns:repeat(3,minmax(0,1fr))">
         <div class="feld" data-tip="Niedrigster Durchfluss seit Programmstart"><small>MIN</small><b id="fmin">—</b></div>
         <div class="feld" data-tip="Höchster Durchfluss seit Programmstart"><small>MAX</small><b id="fmax">—</b></div>
@@ -188,6 +196,14 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
         <span id="leitwert" data-tip="Leitfähigkeit des Kühlmittels. Steigt sie, wird das Wasser schlechter">— µS/cm</span>
         <span id="qualitaet" data-tip="Wasserqualität laut high flow NEXT (aus der Leitfähigkeit berechnet)">— %</span>
         <span id="flusswasser" data-tip="Wassertemperatur direkt am high flow NEXT">— °C</span>
+      </div>
+      <div class="klein" id="pzeile" style="display:none;align-items:center" data-tip="Pumpe am Board-Anschluss CPU_OPT. Startschub: 100 %, bis der high flow NEXT Durchfluss meldet. Automatik: hält den eingestellten Durchfluss. BIOS: das Board regelt selbst (Programm aus oder Steuerung abgeschaltet)">
+        <span id="pmodus">—</span>
+        <span id="pprozent">— %</span>
+        <select id="pbetrieb" aria-label="Pumpenbetrieb" style="min-height:36px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 8px;font:inherit;font-size:15px" data-tip="Automatik: Pumpe so langsam wie möglich, aber mit dem eingestellten Durchfluss (Standard 60 l/h). Hand: du stellst die Ansteuerung selbst ein (25–100 %)"><option value="auto">Automatik</option><option value="hand">Hand</option></select>
+        <label id="pautobox" style="display:flex;align-items:center;gap:8px;flex:1;min-width:220px">Ziel <input type="range" id="pziel" min="30" max="150" step="5" style="flex:1;accent-color:var(--bernstein)"> <b id="pzieltext">—</b></label>
+        <label id="phandbox" style="display:none;align-items:center;gap:8px;flex:1;min-width:220px">Pumpe <input type="range" id="phand" min="25" max="100" step="1" style="flex:1;accent-color:var(--bernstein)"> <b id="phandtext">—</b></label>
+        <button type="button" id="pstandard" data-tip="Zurück auf Standard: Automatik, 60 l/h, Hand-Wert 60 %, gelernte Untergrenze gelöscht" style="min-height:36px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 12px;font:inherit;font-size:14px;cursor:pointer">Standard</button>
       </div>
       <div class="liste" id="luefter" data-tip="Lüfterdrehzahlen aus iCUE"></div>
     </section>
@@ -231,6 +247,11 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
       </div>
     </section>
 
+    <section class="panel s12" id="laufwerke">
+      <h2>LAUFWERKE</h2>
+      <div class="felder" id="lwfelder" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="feld"><small>—</small><b>—</b></div></div>
+    </section>
+
     <section class="panel s12" id="strom">
       <h2>STROM · FRITZ!DECT-STECKDOSE <span class="marke-klein" id="strommarke" data-tip="Verbindung zur FRITZ!Box">verbinde …</span></h2>
       <div class="felder" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
@@ -245,15 +266,30 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
     <section class="panel s12" id="auswertung">
       <h2>AUSWERTUNG <span>gespeicherte Minutenwerte</span></h2>
       <div class="steuer">
-        <select id="atag" aria-label="Tag" data-tip="Welcher Tag ausgewertet wird"></select>
-        <label class="wahl"><span class="punkt" style="background:var(--wasser)"></span><select id="aw1" aria-label="Wert 1" data-tip="Erster Wert (cyan)"></select></label>
-        <label class="wahl"><span class="punkt" style="background:var(--bernstein)"></span><select id="aw2" aria-label="Wert 2" data-tip="Zweiter Wert (bernstein)"></select></label>
-        <label class="wahl"><span class="punkt" style="background:var(--ok)"></span><select id="aw3" aria-label="Wert 3" data-tip="Dritter Wert (grün)"></select></label>
+        <select id="azeit" aria-label="Zeitraum" data-tip="Zeitraum: Heute (Minuten), Woche (Stunden), Monat und Quartal (Tage), Jahr (Monate)">
+          <option value="heute">Heute</option><option value="woche">Woche</option><option value="monat">Monat</option><option value="quartal">Quartal</option><option value="jahr">Jahr</option>
+        </select>
+        <select id="adetail" aria-label="Ausschnitt" data-tip="Ausschnitt von heute">
+          <option value="0">ganzer Tag</option><option value="360">letzte 6 Stunden</option><option value="180">letzte 3 Stunden</option><option value="60">letzte Stunde</option>
+        </select>
+        <select id="abereich" aria-label="Bereich" data-tip="Bereich: Wasser, Steckdose oder Laufwerke">
+          <option value="Wasser">Wasser</option><option value="Steckdose">Steckdose</option><option value="Laufwerke">Laufwerke</option>
+        </select>
+        <select id="awert" aria-label="Wert" data-tip="Wert aus dem gewählten Bereich"></select>
+        <label class="dazu" id="awtbox" data-tip="Wassertemperatur im Behälter als zweite Kurve unter den Durchfluss legen (Skala rechts)" style="display:none"><input type="checkbox" id="awt"> + Wassertemperatur</label>
       </div>
       <div class="diagramm" id="adia" data-tip=""><svg id="asvg" preserveAspectRatio="none"></svg><div class="info" id="ainfo"></div></div>
       <div class="legende" id="aleg"></div>
-      <h2 style="margin-top:6px">SPITZEN DES TAGES</h2>
+      <details id="aspitzenbox" class="aufklapp">
+      <summary>SPITZEN VON HEUTE</summary>
       <table class="spitzen"><thead><tr><th>WERT</th><th style="text-align:right">MIN</th><th style="text-align:right">MAX</th><th style="text-align:right">Ø</th></tr></thead><tbody id="aspitzen"></tbody></table>
+      </details>
+      <details id="akuehlbox" class="aufklapp">
+      <summary>KÜHLUNG-CHECK CPU ZU WASSER</summary>
+      <p style="color:var(--leise);font-size:14px;margin:4px 0 10px" data-tip="Abstand = CPU-Temperatur minus Wassertemperatur. Er zeigt, wie gut der CPU-Kühler die Wärme ans Wasser abgibt. Verglichen werden nur Minuten mit ähnlicher Last, damit Leerlauf und Spielen sich nicht vermischen. Steigt der Abstand über die Tage, setzt sich der Kühler zu oder es fließt weniger Wasser.">Nur Minuten mit <b id="akw_von">35</b>–<b id="akw_bis">55</b> W CPU-Last. Bleibt der Abstand gleich, kühlt der Loop gleich gut.</p>
+      <table class="spitzen"><thead><tr><th>TAG</th><th style="text-align:right">MINUTEN</th><th style="text-align:right">Ø ABSTAND</th><th style="text-align:right">Ø DURCHFLUSS</th></tr></thead><tbody id="akuehltage"></tbody></table>
+      <table class="spitzen" style="margin-top:14px"><thead><tr><th>NEXT ZEIGT</th><th style="text-align:right">MINUTEN</th><th style="text-align:right">Ø ABSTAND</th></tr></thead><tbody id="akuehlfluss"></tbody></table>
+      </details>
     </section>
   </main>
 </div>
@@ -357,9 +393,11 @@ async function laden() {
   $('leitwert').textContent = lw == null ? '— µS/cm' : z(lw) + ' µS/cm';
   $('qualitaet').textContent = qu == null ? '— %' : Math.round(qu) + ' %';
   $('flusswasser').textContent = fw == null ? '— °C' : z(fw) + ' °C';
-  $('flussbox').dataset.tip = `Durchfluss des Kühlwassers in Liter pro Stunde, gemessen vom high flow NEXT. Gelb ab ${grenzen.flussWarnLh} l/h und weniger, rot ab ${grenzen.flussAlarmLh} l/h und weniger`;
+  $('flussbox').dataset.tip = `Durchfluss des Kühlwassers in Liter pro Stunde, gemessen vom high flow NEXT. Gelb ab ${grenzen.flussWarnLh} l/h und weniger, rot ab ${grenzen.flussAlarmLh} l/h und weniger` + (grenzen.flussAlarmAbWasserC > 0 ? `, rot aber nur, wenn das Wasser zugleich ${grenzen.flussAlarmAbWasserC} °C oder wärmer ist` : '');
   $('durchfluss').className = 'panel s5 ' + (fl.status === 'alarm' || fl.status === 'warn' ? fl.status : '');
-  const rpm = icue.filter(w => w.einheit === 'rpm');
+  const pu = icue.find(w => /pumpe/i.test(w.name));
+  $('pumpe').textContent = 'Pumpe ' + (pu && pu.aktuell != null ? Math.round(pu.aktuell) : '—') + ' rpm';
+  const rpm = icue.filter(w => w.einheit === 'rpm' && w !== pu);
   $('luefter').innerHTML = rpm.map(w => `<div data-tip="${w.name}"><span>${w.name.replace(/^iCUE LINK /, '').replace(/: Lüfter$/, '')}</span><b>${w.aktuell == null ? '—' : Math.round(w.aktuell) + ' rpm'}</b></div>`).join('');
 
   // Prozessor & Grafik
@@ -377,6 +415,11 @@ async function laden() {
   setze('gpulast', wert(d, 'gpu.last').aktuell, 0, ' %');
   const gl = wert(d, 'gpu.luefter').aktuell; $('gpuluef').textContent = gl == null ? '— rpm' : Math.round(gl) + ' rpm';
   setze('gpuhot', gh.aktuell, 1, '°'); setze('gpumax', gt.max, 1, '°'); setze('gpuavg', gt.schnitt, 1, '°');
+
+  // Laufwerke
+  const lwListe = d.werte.filter(w => w.gruppe === 'Laufwerke');
+  $('laufwerke').style.display = lwListe.length ? '' : 'none';
+  $('lwfelder').innerHTML = lwListe.map(w => `<div class="feld ${w.status === 'warn' || w.status === 'alarm' ? w.status : ''}" data-tip="${w.name} · seit Programmstart min ${z(w.min)} °C, max ${z(w.max)} °C, Ø ${z(w.schnitt)} °C. Gelb ab ${grenzen.laufwerkWarnC} °C, rot ab ${grenzen.laufwerkAlarmC} °C"><small>${w.name.toUpperCase()}</small><b>${w.aktuell == null ? '—' : z(w.aktuell)} <em>°C</em></b></div>`).join('');
 
   // Strom von der FRITZ!DECT-Steckdose
   const sw = wert(d, 'strom.watt'), sd = d.strom || {};
@@ -454,100 +497,219 @@ document.addEventListener('pointerdown', e => {
 });
 
 // ---------- Auswertung ----------
-let tag = null;
-const farben = ['var(--wasser)', 'var(--bernstein)', 'var(--ok)'];
-const einheitText = w => w.einheit ? ' ' + w.einheit : '';
-const stellen = w => w.einheit === 'V' ? 3 : (w.einheit === 'rpm' || w.einheit === 'W' || w.einheit === '%') ? 0 : 1;
-function kennzahlen(w) {
-  let min = null, max = null, sum = 0, n = 0, tMin = '', tMax = '';
-  w.reihe.forEach((v, i) => {
-    if (v == null) return;
-    if (min == null || v < min) { min = v; tMin = tag.zeiten[i]; }
-    if (max == null || v > max) { max = v; tMax = tag.zeiten[i]; }
-    sum += v; n++;
-  });
-  return { min, max, tMin, tMax, avg: n ? sum / n : null };
+let liste = [], daten = null, daten2 = null, geo = null;
+const wtId = () => (liste.find(w => w.bereich === 'Wasser' && /beh/i.test(w.name)) || {}).id;
+const mitWt = () => $('awert').value === 'flow.durchfluss' && $('awt').checked && !!wtId();
+const stellenE = e => e === 'V' || e === 'kWh' ? (e === 'kWh' ? 2 : 3) : (e === 'rpm' || e === 'W' || e === '%') ? 0 : 1;
+const mitE = e => e ? ' ' + e : '';
+const zp = t => new Date(t);
+const zeitText = (t, schritt) => {
+  const d = zp(t), dd = String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.';
+  const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  return schritt === 'minute' ? hm + ' Uhr' : schritt === 'stunde' ? dd + ' ' + hm + ' Uhr' : schritt === 'tag' ? dd + d.getFullYear() : ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][d.getMonth()] + ' ' + d.getFullYear();
+};
+async function listeLaden() {
+  try { liste = await (await fetch('/api/auswertung/liste', { cache: 'no-store' })).json(); } catch (e) { return; }
+  werteFuellen();
+  await datenLaden();
 }
-async function tageLaden() {
-  let tage = [];
-  try { tage = await (await fetch('/api/tage', { cache: 'no-store' })).json(); } catch (e) { return; }
-  const d0 = new Date(), heute = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
-  $('atag').innerHTML = tage.map(t => `<option value="${t}">${t === heute ? 'Heute' : t.split('-').reverse().join('.')}</option>`).join('');
-  await tagLaden();
+function werteFuellen() {
+  const b = $('abereich').value, alt = $('awert').value;
+  const l = liste.filter(w => w.bereich === b);
+  $('awert').innerHTML = l.map(w => `<option value="${w.id}">${w.name}${w.einheit ? ' (' + w.einheit + ')' : ''}</option>`).join('');
+  if (l.some(w => w.id === alt)) $('awert').value = alt;
 }
-async function tagLaden() {
-  const datum = $('atag').value; if (!datum) return;
-  try { tag = await (await fetch('/api/tag?datum=' + datum, { cache: 'no-store' })).json(); } catch (e) { return; }
-  const vorher = [1, 2, 3].map(i => $('aw' + i).value);
-  const nutzbar = tag.werte.filter(w => w.reihe.some(v => v != null));
-  let gruppe = '', opts = '<option value="">— keiner —</option>';
-  nutzbar.forEach(w => {
-    if (w.gruppe !== gruppe) { if (gruppe) opts += '</optgroup>'; gruppe = w.gruppe; opts += `<optgroup label="${gruppe || 'Sonstiges'}">`; }
-    opts += `<option value="${w.id}">${w.name}${w.einheit ? ' (' + w.einheit + ')' : ''}</option>`;
-  });
-  if (gruppe) opts += '</optgroup>';
-  const vorschlag = ['flow.durchfluss', nutzbar.find(w => /pumpe/i.test(w.name))?.id || 'cpu.temp', 'strom.watt'];
-  [1, 2, 3].forEach(i => {
-    const sel = $('aw' + i); sel.innerHTML = opts;
-    const wunsch = vorher[i - 1] !== undefined && vorher[i - 1] !== '' && nutzbar.some(w => w.id === vorher[i - 1]) ? vorher[i - 1] : vorschlag[i - 1];
-    sel.value = nutzbar.some(w => w.id === wunsch) ? wunsch : '';
-  });
-  zeichnen(); spitzen();
+async function datenLaden() {
+  const id = $('awert').value; if (!id) return;
+  $('awtbox').style.display = id === 'flow.durchfluss' && wtId() ? '' : 'none';
+  try { daten = await (await fetch(`/api/auswertung?zeitraum=${$('azeit').value}&id=${encodeURIComponent(id)}`, { cache: 'no-store' })).json(); } catch (e) { return; }
+  daten2 = null;
+  if (mitWt()) { try { daten2 = await (await fetch(`/api/auswertung?zeitraum=${$('azeit').value}&id=${encodeURIComponent(wtId())}`, { cache: 'no-store' })).json(); } catch (e) { } }
+  zeichnen();
 }
-function gewaehlt() { return [1, 2, 3].map(i => tag && tag.werte.find(w => w.id === $('aw' + i).value)).map((w, i) => w ? { w, f: farben[i] } : null).filter(Boolean); }
 function zeichnen() {
-  if (!tag) return;
-  const svg = $('asvg'), box = $('adia'), W = box.clientWidth, H = box.clientHeight, L = 8, R = 8, O = 10, U = 24;
-  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  const n = tag.zeiten.length, x = i => L + (n <= 1 ? 0 : i / (n - 1)) * (W - L - R);
+  const box = $('adia'), svg = $('asvg');
+  if (!daten || !daten.punkte || !daten.punkte.length) {
+    svg.innerHTML = ''; geo = null; box.style.height = '80px';
+    svg.innerHTML = `<text x="20" y="45" style="font-family:var(--sans);font-size:14px;fill:var(--leise)">Für diesen Zeitraum liegen noch keine Werte vor.</text>`;
+    svg.setAttribute('viewBox', `0 0 ${box.clientWidth} 80`); $('aleg').innerHTML = ''; return;
+  }
+  const zwei = !!(daten2 && daten2.punkte && daten2.punkte.length && mitWt());
+  const H = 300, U = 26, O = 26, L = 64, R = zwei ? 58 : 14; box.style.height = H + 'px';
+  const W = box.clientWidth; svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  let p = daten.punkte.map(q => ({ t: zp(q.t).getTime(), v: q.v, max: q.max, roh: q.t }));
+  const ausschnitt = daten.schritt === 'minute' ? +$('adetail').value : 0;
+  if (ausschnitt && p.length) { const grenze = p[p.length - 1].t - ausschnitt * 60e3; p = p.filter(q => q.t >= grenze); }
+  const balken = daten.art === 'balken';
+  const schrittMs = { minute: 60e3, stunde: 3600e3, tag: 864e5, monat: 30 * 864e5 }[daten.schritt];
+  const bv = daten.von && !ausschnitt ? zp(daten.von).getTime() : p[0].t, bb = daten.bis ? zp(daten.bis).getTime() : p[p.length - 1].t;
+  const von = Math.min(bv, p[0].t) - (balken ? schrittMs / 2 : 0), bis = Math.max(bb, p[p.length - 1].t + (balken ? schrittMs / 2 : 0), von + schrittMs);
+  const x = t => L + (t - von) / (bis - von) * (W - L - R);
+  const werte = p.map(q => q.v);
+  let mn = Math.min(...werte), mx = Math.max(...werte);
+  if (balken) mn = Math.min(0, mn);
+  const sp = (mx - mn) || Math.max(1, Math.abs(mx) * 0.05), u = balken ? mn : mn - sp * 0.1, o = mx + sp * 0.15;
+  const y = v => O + (1 - (v - u) / (o - u)) * (H - O - U);
+  const st = stellenE(daten.einheit);
   let h = '';
-  for (let k = 0; k <= 4; k++) { const y = O + k * (H - O - U) / 4; h += `<line class="linie-hilf" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/>`; }
-  const schritt = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(W / 90))));
-  for (let i = 0; i < n; i += schritt) h += `<text x="${x(i)}" y="${H - 7}" text-anchor="${i === 0 ? 'start' : 'middle'}">${tag.zeiten[i]}</text>`;
-  gewaehlt().forEach(({ w, f }) => {
-    const k = kennzahlen(w); if (k.min == null) return;
-    const spanne = (k.max - k.min) || 1, unten = k.min - spanne * 0.08, oben = k.max + spanne * 0.08;
-    const y = v => O + (1 - (v - unten) / (oben - unten)) * (H - O - U);
-    let d = '', neu = true;
-    w.reihe.forEach((v, i) => { if (v == null) { neu = true; return; } d += (neu ? 'M' : 'L') + x(i).toFixed(1) + ',' + y(v).toFixed(1); neu = false; });
-    h += `<path d="${d}" fill="none" stroke="${f}" stroke-width="2" vector-effect="non-scaling-stroke"/>`;
+  // Achsen
+  [u + (o - u) * 0.0, (mn + mx) / 2, mx].forEach((v, i) => {
+    const vv = i === 0 ? (balken ? 0 : mn) : v;
+    h += `<line class="linie-hilf" x1="${L}" x2="${W - R}" y1="${y(vv)}" y2="${y(vv)}" style="opacity:.6"/><text x="${L - 6}" y="${y(vv) + 4}" text-anchor="end">${z(vv, st)}</text>`;
   });
+  const anzahl = Math.max(2, Math.floor((W - L - R) / 100));
+  let marken = [];
+  if (daten.schritt === 'stunde') { const d = new Date(von); d.setHours(24, 0, 0, 0); for (; d.getTime() <= bis; d.setDate(d.getDate() + 1)) marken.push(d.getTime()); }
+  else if (daten.schritt === 'minute') {
+    const st = [10, 15, 30, 60, 120, 180].find(m => (W - L - R) / ((bis - von) / (m * 60e3)) >= 80) || 240;
+    const d = new Date(von); d.setSeconds(0, 0); d.setMinutes(Math.ceil((d.getHours() * 60 + d.getMinutes()) / st) * st - d.getHours() * 60);
+    for (; d.getTime() <= bis; d.setMinutes(d.getMinutes() + st)) marken.push(d.getTime());
+  }
+  else for (let k = 0; k <= anzahl; k++) marken.push(von + (bis - von) * k / anzahl);
+  marken.forEach((t, k) => {
+    const d = new Date(t);
+    const txt = daten.schritt === 'minute' ? String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+      : daten.schritt === 'monat' ? ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'][d.getMonth()]
+      : String(d.getDate()).padStart(2, '0') + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + '';
+    const xt = x(t), anker = xt < L + 30 ? 'start' : xt > W - R - 30 ? 'end' : 'middle';
+    h += `<line class="linie-hilf" x1="${xt}" x2="${xt}" y1="${O}" y2="${H - U}" style="opacity:.35"/><text x="${xt}" y="${H - 8}" text-anchor="${anker}">${txt}</text>`;
+  });
+  h += `<text x="${L + 8}" y="16" style="fill:var(--wasser);font-family:var(--sans);font-size:13px;font-weight:600">${daten.name}${daten.einheit ? ' (' + daten.einheit + ')' : ''}</text>`;
+  let p2 = [], y2 = null;
+  if (zwei) {
+    p2 = daten2.punkte.map(q => ({ t: zp(q.t).getTime(), v: q.v, roh: q.t })).filter(q => q.t >= von && q.t <= bis);
+    if (p2.length) {
+      const w2 = p2.map(q => q.v), mn2 = Math.min(...w2), mx2 = Math.max(...w2), sp2 = (mx2 - mn2) || 1, u2 = mn2 - sp2 * 0.1, o2 = mx2 + sp2 * 0.15;
+      y2 = v => O + (1 - (v - u2) / (o2 - u2)) * (H - O - U);
+      [mn2, (mn2 + mx2) / 2, mx2].forEach(v => { h += `<text x="${W - R + 6}" y="${y2(v) + 4}" style="fill:var(--bernstein)">${z(v, 1)}</text>`; });
+      let d2 = '', l2 = null;
+      p2.forEach(q => { d2 += (l2 == null || q.t - l2 > schrittMs * 2.5 ? 'M' : 'L') + x(q.t).toFixed(1) + ',' + y2(q.v).toFixed(1); l2 = q.t; });
+      h += `<path d="${d2}" fill="none" stroke="var(--bernstein)" stroke-width="1.6" stroke-linejoin="round" opacity=".85"/>`;
+      h += `<text x="${W - R}" y="16" text-anchor="end" style="fill:var(--bernstein);font-family:var(--sans);font-size:13px;font-weight:600">${daten2.name} (°C)</text>`;
+    }
+  }
+  if (balken) {
+    const bw = Math.min(60, Math.max(2, (W - L - R) / ((bis - von) / schrittMs) * 0.7));
+    p.forEach(q => { h += `<rect x="${x(q.t) - bw / 2}" y="${y(q.v)}" width="${bw}" height="${Math.max(1, y(0) - y(q.v))}" rx="2" fill="var(--wasser)" opacity=".85"/>`; });
+  } else {
+    let d = '', letzte = null;
+    p.forEach(q => { d += (letzte == null || q.t - letzte > schrittMs * 2.5 ? 'M' : 'L') + x(q.t).toFixed(1) + ',' + y(q.v).toFixed(1); letzte = q.t; });
+    h += `<path d="${d}" fill="none" stroke="var(--wasser)" stroke-width="2" stroke-linejoin="round"/>`;
+  }
   h += `<line class="zeiger" id="azeiger" x1="-10" x2="-10" y1="${O}" y2="${H - U}"/>`;
   svg.innerHTML = h;
-  $('aleg').innerHTML = gewaehlt().map(({ w, f }) => {
-    const k = kennzahlen(w), st = stellen(w);
-    return `<div class="feld" style="box-shadow:inset 3px 0 0 ${f}" data-tip="Werte für den ganzen Tag (Minuten-Durchschnitte)"><small>${w.name.toUpperCase()}</small><b>min ${z(k.min, st)} · max ${z(k.max, st)} · Ø ${z(k.avg, st)}<em>${einheitText(w)}</em></b><small style="margin-top:4px;letter-spacing:0">Höchstwert um ${k.tMax} Uhr · Tiefstwert um ${k.tMin} Uhr</small></div>`;
-  }).join('');
-  box.dataset.tip = '';
+  geo = { p, p2, x, von, bis, L, R };
+  // Kennzahlen
+  let iMin = 0, iMax = 0, sum = 0;
+  p.forEach((q, i) => { if (q.v < p[iMin].v) iMin = i; if (q.v > p[iMax].v) iMax = i; sum += q.v; });
+  const summe = daten.einheit === 'kWh' && daten.art === 'balken' ? ` · Summe ${z(sum, 2)}` : '';
+  $('aleg').innerHTML = `<div class="feld" style="box-shadow:inset 3px 0 0 var(--wasser)" data-tip="Kennzahlen im gewählten Zeitraum"><small>${daten.name.toUpperCase()}</small><b>min ${z(p[iMin].v, st)} · max ${z(p[iMax].v, st)} · Ø ${z(sum / p.length, st)}${summe}<em>${mitE(daten.einheit)}</em></b><small style="margin-top:4px;letter-spacing:0">Höchstwert ${zeitText(p[iMax].roh, daten.schritt)} · Tiefstwert ${zeitText(p[iMin].roh, daten.schritt)}</small></div>`;
+  if (p2.length) {
+    let a = 0, b2 = 0, s2 = 0; p2.forEach((q, i) => { if (q.v < p2[a].v) a = i; if (q.v > p2[b2].v) b2 = i; s2 += q.v; });
+    $('aleg').innerHTML += `<div class="feld" style="box-shadow:inset 3px 0 0 var(--bernstein)" data-tip="Wassertemperatur im gewählten Zeitraum"><small>${daten2.name.toUpperCase()}</small><b>min ${z(p2[a].v, 1)} · max ${z(p2[b2].v, 1)} · Ø ${z(s2 / p2.length, 1)}<em> °C</em></b><small style="margin-top:4px;letter-spacing:0">Höchstwert ${zeitText(p2[b2].roh, daten.schritt)} · Tiefstwert ${zeitText(p2[a].roh, daten.schritt)}</small></div>`;
+  }
 }
 function zeigen(e) {
-  if (!tag || !tag.zeiten.length) return;
-  const box = $('adia'), r = box.getBoundingClientRect(), L = 8, R = 8, n = tag.zeiten.length;
-  const i = Math.max(0, Math.min(n - 1, Math.round((e.clientX - r.left - L) / (r.width - L - R) * (n - 1))));
-  const xs = L + (n <= 1 ? 0 : i / (n - 1)) * (r.width - L - R);
+  if (!geo) return;
+  const b = $('adia').getBoundingClientRect(), { p, von, bis, L, R } = geo;
+  const t = von + (e.clientX - b.left - L) / (b.width - L - R) * (bis - von);
+  let best = 0; p.forEach((q, i) => { if (Math.abs(q.t - t) < Math.abs(p[best].t - t)) best = i; });
+  const q = p[best], xs = L + (q.t - von) / (bis - von) * (b.width - L - R);
   const z1 = $('azeiger'); if (z1) { z1.setAttribute('x1', xs); z1.setAttribute('x2', xs); }
-  const info = $('ainfo');
-  info.innerHTML = `<b>${tag.zeiten[i]} Uhr</b><br>` + gewaehlt().map(({ w, f }) => `<span style="color:${f}">●</span> ${w.name}: ${z(w.reihe[i], stellen(w))}${einheitText(w)}`).join('<br>');
+  const st = stellenE(daten.einheit), info = $('ainfo');
+  info.innerHTML = `<b>${zeitText(q.roh, daten.schritt)}</b><br>${daten.schritt === 'minute' || daten.art === 'balken' ? '' : 'Ø '}${z(q.v, st)}${mitE(daten.einheit)}` + (daten.schritt !== 'minute' && daten.art !== 'balken' ? `<br>max ${z(q.max, st)}${mitE(daten.einheit)}` : '');
+  if (geo.p2 && geo.p2.length) {
+    let b2 = 0; geo.p2.forEach((w, i) => { if (Math.abs(w.t - q.t) < Math.abs(geo.p2[b2].t - q.t)) b2 = i; });
+    info.innerHTML += `<br><span style="color:var(--bernstein)">Wasser ${z(geo.p2[b2].v, 1)} °C</span>`;
+  }
   info.style.display = 'block';
-  info.style.left = (xs > r.width / 2 ? Math.max(4, xs - info.offsetWidth - 12) : xs + 12) + 'px';
+  info.style.left = (xs > b.width / 2 ? Math.max(4, xs - info.offsetWidth - 12) : xs + 12) + 'px';
 }
 $('adia').addEventListener('pointermove', zeigen);
 $('adia').addEventListener('pointerdown', zeigen);
 $('adia').addEventListener('pointerleave', () => { $('ainfo').style.display = 'none'; const z1 = $('azeiger'); if (z1) { z1.setAttribute('x1', -10); z1.setAttribute('x2', -10); } });
-function spitzen() {
-  const liste = ['strom.watt', 'cpu.watt', 'gpu.watt', 'cpu.temp', 'gpu.temp', 'gpu.hotspot', 'board.vrm', 'board.soc', 'flow.durchfluss', 'flow.wasser'];
+$('abereich').addEventListener('change', () => { werteFuellen(); datenLaden(); });
+$('awert').addEventListener('change', datenLaden);
+$('awt').addEventListener('change', datenLaden);
+$('azeit').addEventListener('change', () => { $('adetail').style.display = $('azeit').value === 'heute' ? '' : 'none'; datenLaden(); });
+$('adetail').addEventListener('change', zeichnen);
+addEventListener('resize', zeichnen);
+setInterval(() => { if ($('azeit').value === 'heute') datenLaden(); }, 60000);
+
+// Spitzen von heute (zum Ausklappen)
+async function spitzen() {
+  const d0 = new Date(), heute = `${d0.getFullYear()}-${String(d0.getMonth() + 1).padStart(2, '0')}-${String(d0.getDate()).padStart(2, '0')}`;
+  let tag; try { tag = await (await fetch('/api/tag?datum=' + heute, { cache: 'no-store' })).json(); } catch (e) { return; }
+  const ids = ['strom.watt', 'cpu.watt', 'gpu.watt', 'cpu.temp', 'gpu.temp', 'gpu.hotspot', 'board.vrm', 'board.soc', 'flow.durchfluss', 'flow.wasser'];
   const wasser = tag.werte.find(w => w.id.startsWith('icue.') && w.einheit === '°C' && /beh|wasser|coolant/i.test(w.name));
-  if (wasser) liste.splice(9, 0, wasser.id);
-  $('aspitzen').innerHTML = liste.map(id => tag.werte.find(w => w.id === id)).filter(w => w && w.reihe.some(v => v != null)).map(w => {
-    const k = kennzahlen(w), st = stellen(w), e = einheitText(w);
-    return `<tr><td>${w.name}</td><td class="z">${z(k.min, st)}${e}<br><small style="color:var(--stumm)">${k.tMin}</small></td><td class="z">${z(k.max, st)}${e}<br><small style="color:var(--stumm)">${k.tMax}</small></td><td class="z">${z(k.avg, st)}${e}</td></tr>`;
+  if (wasser) ids.splice(9, 0, wasser.id);
+  $('aspitzen').innerHTML = ids.map(id => tag.werte.find(w => w.id === id)).filter(w => w && w.reihe.some(v => v != null)).map(w => {
+    let min = null, max = null, tMin = '', tMax = '', s = 0, n = 0;
+    w.reihe.forEach((v, i) => { if (v == null) return; if (min == null || v < min) { min = v; tMin = tag.zeiten[i]; } if (max == null || v > max) { max = v; tMax = tag.zeiten[i]; } s += v; n++; });
+    const st = stellenE(w.einheit), e = mitE(w.einheit);
+    return `<tr><td>${w.name}</td><td class="z">${z(min, st)}${e}<br><small style="color:var(--stumm)">${tMin}</small></td><td class="z">${z(max, st)}${e}<br><small style="color:var(--stumm)">${tMax}</small></td><td class="z">${z(s / n, st)}${e}</td></tr>`;
   }).join('');
 }
-['aw1', 'aw2', 'aw3'].forEach(id => $(id).addEventListener('change', zeichnen));
-$('atag').addEventListener('change', tagLaden);
-addEventListener('resize', zeichnen);
-setInterval(() => { if ($('atag').selectedIndex === 0) tagLaden(); }, 60000);
-tageLaden();
+$('aspitzenbox').addEventListener('toggle', () => { if ($('aspitzenbox').open) spitzen(); });
+
+// Kühlung-Check: Abstand CPU-Temperatur zu Wassertemperatur bei vergleichbarer Last (zum Ausklappen)
+const KW_VON = 35, KW_BIS = 55, KW_TAGE = 14;
+async function kuehlCheck() {
+  let tage; try { tage = await (await fetch('/api/tage', { cache: 'no-store' })).json(); } catch (e) { return; }
+  tage = tage.slice(0, KW_TAGE);
+  const gruppen = [[0, 1, '0 l/h'], [1, 50, 'unter 50 l/h'], [50, 70, '50–70 l/h'], [70, 1e9, 'über 70 l/h']].map(g => ({ von: g[0], bis: g[1], name: g[2], s: 0, n: 0 }));
+  const zeilen = [];
+  for (const datum of tage) {
+    let tag; try { tag = await (await fetch('/api/tag?datum=' + datum, { cache: 'no-store' })).json(); } catch (e) { continue; }
+    const r = id => (tag.werte.find(w => w.id === id) || {}).reihe;
+    const wb = tag.werte.find(w => w.id.startsWith('icue.') && w.einheit === '°C' && /beh|wasser|coolant/i.test(w.name));
+    const ct = r('cpu.temp'), cw = r('cpu.watt'), fw = r('flow.wasser'), iw = wb && wb.reihe, fl = r('flow.durchfluss');
+    if (!ct || !cw) continue;
+    let s = 0, n = 0, fs = 0, fn = 0;
+    ct.forEach((t, i) => {
+      const w = fw && fw[i] != null && fw[i] > 0 ? fw[i] : iw ? iw[i] : null;
+      if (t == null || w == null || w < 5 || w > 60 || cw[i] == null || cw[i] < KW_VON || cw[i] > KW_BIS) return; // unplausible Wasserwerte (alte Fehlzuordnung) weglassen
+      const d = t - w; s += d; n++;
+      const f = fl ? fl[i] : null;
+      if (f != null) { fs += f; fn++; const g = gruppen.find(g => f >= g.von && f < g.bis); if (g) { g.s += d; g.n++; } }
+    });
+    if (n) zeilen.push(`<tr><td>${datum.slice(8, 10)}.${datum.slice(5, 7)}.${datum.slice(0, 4)}</td><td class="z">${n}</td><td class="z">${z(s / n)} K</td><td class="z">${fn ? z(fs / fn) + ' l/h' : '—'}</td></tr>`);
+  }
+  $('akuehltage').innerHTML = zeilen.join('') || '<tr><td colspan="4" style="color:var(--stumm)">Noch keine passenden Minuten</td></tr>';
+  $('akuehlfluss').innerHTML = gruppen.filter(g => g.n).map(g => `<tr><td>${g.name}</td><td class="z">${g.n}</td><td class="z">${z(g.s / g.n)} K</td></tr>`).join('') || '<tr><td colspan="3" style="color:var(--stumm)">Noch keine Durchflusswerte</td></tr>';
+}
+$('akw_von').textContent = KW_VON; $('akw_bis').textContent = KW_BIS;
+$('akuehlbox').addEventListener('toggle', () => { if ($('akuehlbox').open) kuehlCheck(); });
+listeLaden();
+
+// Pumpe am Board: Zustand anzeigen, Zieldrehzahl mit dem Regler einstellen
+let pzielAktiv = false, phandAktiv = false;
+async function pumpeLaden(ziel, extra) {
+  const q = (ziel ? '?ziel=' + ziel : '') + (extra ? (ziel ? '&' : '?') + extra : '');
+  let p; try { p = await (await fetch('/api/pumpe' + q, { cache: 'no-store' })).json(); } catch (e) { return; }
+  if (!p.gefunden) { $('pzeile').style.display = 'none'; return; }
+  $('pzeile').style.display = 'flex';
+  $('pmodus').textContent = p.modus === 'Regelung' ? 'Automatik' : p.modus === 'Hand' ? 'Hand' : p.modus === 'Startschub' ? 'STARTSCHUB' : 'BIOS';
+  if (document.activeElement !== $('pbetrieb')) $('pbetrieb').value = p.betrieb;
+  $('pautobox').style.display = p.betrieb === 'hand' ? 'none' : 'flex';
+  $('phandbox').style.display = p.betrieb === 'hand' ? 'flex' : 'none';
+  if (!phandAktiv) $('phand').value = p.hand;
+  $('phandtext').textContent = Math.round(phandAktiv ? $('phand').value : p.hand) + ' %';
+  $('pbetrieb').disabled = $('phand').disabled = $('pstandard').disabled = !p.steuern;
+  $('pmodus').style.color = p.modus === 'Startschub' ? 'var(--warn)' : '';
+  $('pprozent').textContent = p.modus === 'BIOS' ? '' : Math.round(p.prozent) + ' %' + (p.boden > 0 && p.betrieb !== 'hand' ? ` (mind. ${Math.round(p.boden)} %)` : '');
+  if (!pzielAktiv) $('pziel').value = p.ziel;
+  $('pzieltext').textContent = Math.round(pzielAktiv ? $('pziel').value : p.ziel) + ' l/h';
+  $('pziel').disabled = !p.steuern;
+}
+$('pziel').addEventListener('input', () => { pzielAktiv = true; $('pzieltext').textContent = $('pziel').value + ' l/h'; });
+$('pstandard').addEventListener('click', () => pumpeLaden(null, 'standard=1'));
+$('pziel').addEventListener('change', async () => { await pumpeLaden($('pziel').value); pzielAktiv = false; });
+$('phand').addEventListener('input', () => { phandAktiv = true; $('phandtext').textContent = $('phand').value + ' %'; });
+$('phand').addEventListener('change', async () => { await pumpeLaden(null, 'prozent=' + $('phand').value); phandAktiv = false; });
+$('pbetrieb').addEventListener('change', () => pumpeLaden(null, 'betrieb=' + $('pbetrieb').value));
+pumpeLaden();
+setInterval(() => pumpeLaden(), 2000);
 
 laden().then(verlauf);
 setInterval(laden, 2000);

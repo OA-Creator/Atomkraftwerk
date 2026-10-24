@@ -19,6 +19,11 @@ public class Grenzen
     public double WasserAlarmC { get; set; } = 40;
     public double FlussWarnLh { get; set; } = 25;
     public double FlussAlarmLh { get; set; } = 15;
+    // Rot beim Durchfluss nur, wenn das Wasser zugleich mindestens so warm ist (haengendes Messrad).
+    // 0 = alte Regel: rot allein nach Durchfluss
+    public double FlussAlarmAbWasserC { get; set; } = 35;
+    public double LaufwerkWarnC { get; set; } = 60;
+    public double LaufwerkAlarmC { get; set; } = 70;
 }
 
 public class Einstellungen
@@ -30,6 +35,16 @@ public class Einstellungen
     public Grenzen Grenzen { get; set; } = new();
     public double StrompreisCentProKWh { get; set; } = 0;
     public FritzEinstellungen Fritz { get; set; } = new();
+    // Eigene Namen für die Laufwerke: "Modellname": "Anzeigename"
+    public Dictionary<string, string> LaufwerkNamen { get; set; } = new();
+    // Alarmfenster auf dem Bildschirm, sobald ein Wert rot wird
+    public bool AlarmFenster { get; set; } = true;
+    // Automatisch herunterfahren nach so vielen Sekunden ohne Reaktion (0 = nur auf Knopfdruck)
+    public int AlarmAbschaltenSekunden { get; set; } = 45;
+    // Alarm zusätzlich aufs Handy (ntfy für Android, Pushover für iPhone)
+    public HandyEinstellungen Handy { get; set; } = new();
+    // Pumpe am Board-Anschluss selbst steuern (Startschub + Regelung)
+    public PumpenEinstellungen Pumpe { get; set; } = new();
 
     public static readonly JsonSerializerOptions Json = new()
     {

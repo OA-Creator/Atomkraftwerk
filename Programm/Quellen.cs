@@ -12,11 +12,15 @@ public sealed class HardwareQuelle : IDisposable
     private readonly Computer _pc = new()
     {
         IsCpuEnabled = true, IsGpuEnabled = true, IsMotherboardEnabled = true, IsMemoryEnabled = true,
-        IsControllerEnabled = true // Aquacomputer high flow NEXT (USB)
+        IsControllerEnabled = true, // Aquacomputer high flow NEXT (USB)
+        IsStorageEnabled = true     // Laufwerkstemperaturen
     };
 
     private ISensor? _cpuTemp, _cpuWatt, _cpuLast, _gpuTemp, _gpuHot, _gpuWatt, _gpuLast, _gpuLuefter, _ram, _vrm, _soc, _pch;
     private ISensor? _fluss, _flussWasser, _leitwert, _qualitaet;
+    private readonly List<(string id, string modell, ISensor temp)> _laufwerke = new();
+    // Lüfter- und Pumpenanschlüsse am Board (Drehzahl + Ansteuerung in %), nur lesen
+    private readonly List<(string id, string name, string einheit, ISensor s)> _boardLuefter = new();
     public bool Offen { get; private set; }
 
     public void Oeffnen()
@@ -74,10 +78,76 @@ public sealed class HardwareQuelle : IDisposable
         Log.Schreiben("high flow NEXT: " + (flow.Count == 0 ? "nicht gefunden" :
             string.Join(", ", flow.SelectMany(h => h.Sensors).Select(s => $"{s.SensorType}/{s.Name}"))));
 
+        // Laufwerke: je Laufwerk die erste Temperatur (bei NVMe "Composite")
+        _laufwerke.Clear();
+        foreach (var lw in AlleHardware.Where(h => h.HardwareType == HardwareType.Storage))
+        {
+            var t = lw.Sensors.Where(s => s.SensorType == SensorType.Temperature).OrderBy(s => s.Index).FirstOrDefault();
+            if (t is null) continue;
+            var (seriennr, buchstaben) = LaufwerkInfo(lw);
+            var schluessel = string.IsNullOrEmpty(seriennr) ? lw.Name : seriennr;
+            var id = "lw." + new string(schluessel.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Trim('-');
+            while (_laufwerke.Any(x => x.id == id)) id += "-2";
+            // Kennung für die Namenszuordnung in atomkraftwerk.json: Laufwerksbuchstabe(n), sonst Seriennummer, sonst Modell
+            var kurz = lw.Name.Replace("Samsung SSD ", "").Trim();
+            var anzeige = buchstaben.Length > 0 ? $"{kurz} ({buchstaben})" : kurz;
+            _laufwerke.Add((id, anzeige + "|" + buchstaben + "|" + seriennr + "|" + lw.Name.Trim(), t));
+        }
+        Log.Schreiben("Laufwerke: " + (_laufwerke.Count == 0 ? "keine Temperatur gefunden" : string.Join(" | ", _laufwerke.Select(l => l.modell))));
+
         CpuName = cpu.FirstOrDefault()?.Name ?? "";
         BoardName = AlleHardware.FirstOrDefault(h => h.HardwareType == HardwareType.Motherboard)?.Name ?? "";
 
         Log.Schreiben($"Hardware: {CpuName} | {GpuName} | {BoardName} | Board-Chip: {sio.FirstOrDefault()?.Name ?? "nicht gefunden"}");
+
+        // Lüfter-/Pumpenanschlüsse am Board: alle Chips (IT8696E und IT87952E), nur lesen – es wird nichts verstellt
+        _boardLuefter.Clear();
+        for (int c = 0; c < sio.Count; c++)
+        {
+            var chip = sio[c];
+            var kurz = new string(chip.Name.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+            foreach (var s in chip.Sensors.Where(s => s.SensorType is SensorType.Fan or SensorType.Control).OrderBy(s => s.SensorType).ThenBy(s => s.Index))
+            {
+                var art = s.SensorType == SensorType.Fan ? "rpm" : "%";
+                var id = $"bl.{kurz}.{(s.SensorType == SensorType.Fan ? "fan" : "ctl")}{s.Index + 1}";
+                _boardLuefter.Add((id, $"{chip.Name} {s.Name}", art, s));
+            }
+            var zeilen = chip.Sensors.Where(s => s.SensorType is SensorType.Fan or SensorType.Control).OrderBy(s => s.Index).ThenBy(s => s.SensorType)
+                .Select(s => s.SensorType == SensorType.Fan
+                    ? $"{s.Name} = {(s.Value is float f ? Math.Round(f) + " rpm" : "—")}"
+                    : $"{s.Name} = {(s.Value is float p ? Math.Round(p) + " %" : "—")}, steuerbar: {(s.Control is null ? "NEIN" : "ja (" + s.Control.ControlMode + ")")}");
+            Log.Schreiben($"Board-Anschlüsse {chip.Name}: " + (zeilen.Any() ? string.Join(" | ", zeilen) : "keine gefunden"));
+        }
+    }
+
+    // Laufwerksbuchstaben und Seriennummer über die DiskInfoToolkit-Daten von LibreHardwareMonitor (per Reflection, ohne feste Abhängigkeit)
+    private static (string serie, string buchstaben) LaufwerkInfo(IHardware hw)
+    {
+        try
+        {
+            const System.Reflection.BindingFlags alle = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var st = hw.GetType().GetProperty("Storage", alle)?.GetValue(hw);
+            if (st is null) Log.Schreiben("Laufwerk " + hw.Name + ": keine Detaildaten (" + hw.GetType().FullName + ")");
+            if (st is null) return ("", "");
+            var serie = (st.GetType().GetProperty("SerialNumber", alle)?.GetValue(st)?.ToString() ?? "").Trim();
+            var liste = new List<string>();
+            if (st.GetType().GetProperty("Partitions", alle)?.GetValue(st) is System.Collections.IEnumerable teile)
+                foreach (var t in teile)
+                {
+                    var b = t?.GetType().GetProperty("DriveLetter", alle)?.GetValue(t)?.ToString()?.Trim().TrimEnd(':', '\\');
+                    if (!string.IsNullOrEmpty(b) && b != "\0" && char.IsLetter(b[0])) liste.Add(b[0] + ":");
+                }
+            return (serie, string.Join(" ", liste.Distinct().OrderBy(x => x)));
+        }
+        catch (Exception ex) { Log.Schreiben("Laufwerk " + hw.Name + ": " + ex.Message); return ("", ""); }
+    }
+
+    // Board-Anschluss (z. B. "Fan #6") mit Drehzahl- und Steuer-Sensor
+    public (ISensor? fan, ISensor? ctl) Anschluss(string name)
+    {
+        var sio = AlleHardware.Where(h => h.HardwareType == HardwareType.SuperIO).SelectMany(h => h.Sensors).ToList();
+        return (sio.FirstOrDefault(s => s.SensorType == SensorType.Fan && s.Name.Equals(name, StringComparison.OrdinalIgnoreCase)),
+                sio.FirstOrDefault(s => s.SensorType == SensorType.Control && s.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
     }
 
     public string CpuName { get; private set; } = "";
@@ -115,6 +185,10 @@ public sealed class HardwareQuelle : IDisposable
         a.Wert("flow.wasser").Setzen(_flussWasser?.Value);
         a.Wert("flow.leitwert").Setzen(_leitwert?.Value);
         a.Wert("flow.qualitaet").Setzen(_qualitaet?.Value);
+        foreach (var (id, info, temp) in _laufwerke)
+            a.Wert(id, a.LaufwerkName(info), "Laufwerke", "°C").Setzen(temp.Value);
+        foreach (var (id, name, einheit, s) in _boardLuefter)
+            a.Wert(id, name, "Board-Lüfter", einheit).Setzen(s.Value);
     }
 
     public void Dispose()
@@ -134,6 +208,8 @@ public sealed class IcueQuelle
     public string Datei { get; private set; } = "";
     public string Stand { get; private set; } = "";
     public bool Laeuft { get; private set; }
+    // hängt die Pumpe am Board, kommt ihre Drehzahl nicht mehr aus iCUE
+    public bool PumpeVomBoard { get; set; }
 
     public void Lesen(Anlage a)
     {
@@ -155,10 +231,14 @@ public sealed class IcueQuelle
         var namen = Spalten(kopf);
         var werte = Spalten(letzte);
         if (werte.Count > 0) Stand = werte[0].Trim();
+        // Sensoren, die in der aktuellen iCUE-Datei nicht mehr vorkommen (umbenannt), nicht weiter führen
+        var aktuelle = namen.Skip(1).Select(n => "icue." + IdAus(n.Trim())).ToHashSet();
+        a.Entfernen(id => id.StartsWith("icue.") && !aktuelle.Contains(id) && !(PumpeVomBoard && id == PumpenSteuerung.Id));
         for (int i = 1; i < namen.Count && i < werte.Count; i++)
         {
             var name = namen[i].Trim();
             var id = "icue." + IdAus(name);
+            if (PumpeVomBoard && (id == PumpenSteuerung.Id || name.Contains("pump", StringComparison.OrdinalIgnoreCase))) continue;
             var mw = a.Wert(id, name, "Kühlung", EinheitAus(name));
             mw.Setzen(Laeuft && ZahlAus(werte[i], out var v) ? v : null);
         }

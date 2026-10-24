@@ -14,14 +14,32 @@
     "wasserWarnC": 35,
     "wasserAlarmC": 40,
     "flussWarnLh": 25,
-    "flussAlarmLh": 15
+    "flussAlarmLh": 15,
+    "flussAlarmAbWasserC": 35
   },
   "strompreisCentProKWh": 30.0,
+  "alarmFenster": true,
+  "alarmAbschaltenSekunden": 45,
+  "handy": {
+    "ntfyServer": "https://ntfy.sh",
+    "ntfyThema": "",
+    "pushoverToken": "",
+    "pushoverBenutzer": ""
+  },
+  "pumpe": {
+    "steuern": true,
+    "anschluss": "",
+    "zielFluss": 60,
+    "minProzent": 40,
+    "betrieb": "auto",
+    "handProzent": 60
+  },
   "fritz": {
     "adresse": "http://fritz.box",
     "benutzer": "atomkraftwerk",
     "kennwort": "",
     "ain": "",
     "abfrageSekunden": 10
-  }
+  },
+  "laufwerkNamen": {}
 }

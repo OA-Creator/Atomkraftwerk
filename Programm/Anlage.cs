@@ -19,6 +19,14 @@ public sealed class Anlage
     public bool IcueLaeuft;
     public StromStand? Strom;
     public string DatenOrdner => _datenOrdner;
+    // info = "Anzeige|Buchstaben|Seriennummer|Modell" – eigener Name per Buchstabe (z. B. "H:"), Seriennummer oder Modell
+    public string LaufwerkName(string info)
+    {
+        var t = info.Split('|');
+        foreach (var k in t[1].Split(' ', StringSplitOptions.RemoveEmptyEntries).Concat(new[] { t[2], t[3] }))
+            if (k.Length > 0 && _e.LaufwerkNamen.TryGetValue(k, out var n) && !string.IsNullOrWhiteSpace(n)) return n;
+        return t[0];
+    }
 
     public Anlage(Einstellungen e, string programmOrdner)
     {
@@ -62,12 +70,24 @@ public sealed class Anlage
         }
     }
 
+    // Werte entfernen, die es nicht mehr gibt (z. B. iCUE-Sensor umbenannt)
+    public void Entfernen(Func<string, bool> weg)
+    {
+        lock (_sperre)
+            foreach (var id in _reihenfolge.Where(weg).ToList()) { _reihenfolge.Remove(id); _werte.Remove(id); }
+    }
+
     // ---------- Status nach Grenzwerten ----------
     public void Bewerten()
     {
         var g = _e.Grenzen;
         lock (_sperre)
         {
+            // Wassertemperatur fuer den Durchfluss-Alarm: high flow NEXT, sonst iCUE
+            double? wasser = _werte.TryGetValue("flow.wasser", out var fw) ? fw.Aktuell : null;
+            wasser ??= _werte.Values.Where(x => x.Id.StartsWith("icue.") && x.Einheit == "°C" && x.Aktuell != null)
+                                    .Select(x => x.Aktuell).Max();
+            bool wasserWarm = g.FlussAlarmAbWasserC <= 0 || (wasser != null && wasser >= g.FlussAlarmAbWasserC);
             foreach (var m in _werte.Values)
             {
                 if (m.Aktuell is null) { m.Status = "aus"; continue; }
@@ -78,14 +98,24 @@ public sealed class Anlage
                     "board.soc" => v >= g.SocAlarmV ? "alarm" : v >= g.SocWarnV ? "warn" : "ok",
                     "cpu.temp" => v >= g.CpuAlarmC ? "alarm" : "ok",
                     "gpu.hotspot" => v >= g.GpuHotspotAlarmC ? "alarm" : "ok",
-                    "flow.durchfluss" => v <= g.FlussAlarmLh ? "alarm" : v <= g.FlussWarnLh ? "warn" : "ok",
+                    "flow.durchfluss" => v <= g.FlussAlarmLh && wasserWarm ? "alarm" : v <= g.FlussWarnLh ? "warn" : "ok",
                     "flow.wasser" => v >= g.WasserAlarmC ? "alarm" : v >= g.WasserWarnC ? "warn" : "ok",
+                    _ when m.Id.StartsWith("lw.") => v >= g.LaufwerkAlarmC ? "alarm" : v >= g.LaufwerkWarnC ? "warn" : "ok",
                     _ when m.Id.StartsWith("icue.") && m.Einheit == "°C" =>
                         v >= g.WasserAlarmC ? "alarm" : v >= g.WasserWarnC ? "warn" : "ok",
                     _ => "ok"
                 };
             }
         }
+    }
+
+    // Alle Werte, die gerade rot sind (für das Alarmfenster)
+    public List<(string id, string name, string text)> RoteWerte()
+    {
+        lock (_sperre)
+            return _reihenfolge.Select(id => _werte[id]).Where(m => m.Status == "alarm" && m.Aktuell != null)
+                .Select(m => (m.Id, m.Name, m.Aktuell!.Value.ToString(m.Einheit == "V" ? "0.000" : "0.0", CultureInfo.GetCultureInfo("de-DE")) + (m.Einheit == "" ? "" : " " + m.Einheit)))
+                .ToList();
     }
 
     public string Gesamtstatus()
@@ -206,39 +236,53 @@ public sealed class Anlage
         return JsonSerializer.Serialize(tage.Reverse().ToList(), Einstellungen.Json);
     }
 
-    public string TagJson(string datum)
+    // Minutenwerte eines Tages aus allen Dateien (Tag.csv, Tag_2.csv ...), Minute für Minute
+    public (SortedDictionary<string, Dictionary<string, double>> zeilen, List<string> ids) TagLesen(string datum)
     {
-        // Alle Dateien des Tages (Tag.csv, Tag_2.csv ...) zusammenführen, Minute für Minute
         var zeilen = new SortedDictionary<string, Dictionary<string, double>>(StringComparer.Ordinal);
         var ids = new List<string>();
-        if (System.Text.RegularExpressions.Regex.IsMatch(datum, @"^\d{4}-\d{2}-\d{2}$"))
+        if (!System.Text.RegularExpressions.Regex.IsMatch(datum, @"^\d{4}-\d{2}-\d{2}$")) return (zeilen, ids);
+        IEnumerable<string> dateien;
+        try
         {
-            var dateien = Directory.GetFiles(_datenOrdner, datum + "*.csv")
+            dateien = Directory.GetFiles(_datenOrdner, datum + "*.csv")
                 .Where(f => { var n = Path.GetFileNameWithoutExtension(f); return n == datum || n.StartsWith(datum + "_"); })
-                .OrderBy(f => File.GetLastWriteTimeUtc(f));
-            foreach (var datei in dateien)
+                .OrderBy(f => File.GetLastWriteTimeUtc(f)).ToList();
+        }
+        catch { return (zeilen, ids); }
+        foreach (var datei in dateien)
+        {
+            string[] text;
+            try
             {
-                string[] text;
-                try
-                {
-                    using var fs = new FileStream(datei, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    using var sr = new StreamReader(fs);
-                    text = sr.ReadToEnd().Split('\n');
-                }
-                catch { continue; }
-                if (text.Length < 2) continue;
-                var kopf = text[0].Trim().Split(';');
-                foreach (var id in kopf.Skip(1)) if (!ids.Contains(id)) ids.Add(id);
-                foreach (var z in text.Skip(1))
-                {
-                    var t = z.Trim().Split(';');
-                    if (t.Length < 2 || t[0].Length != 5) continue;
-                    if (!zeilen.TryGetValue(t[0], out var zeile)) zeilen[t[0]] = zeile = new();
-                    for (int i = 1; i < t.Length && i < kopf.Length; i++)
-                        if (double.TryParse(t[i], NumberStyles.Float, CultureInfo.InvariantCulture, out var v)) zeile[kopf[i]] = v;
-                }
+                using var fs = new FileStream(datei, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var sr = new StreamReader(fs);
+                text = sr.ReadToEnd().Split('\n');
+            }
+            catch { continue; }
+            if (text.Length < 2) continue;
+            var kopf = text[0].Trim().Split(';');
+            foreach (var id in kopf.Skip(1)) if (!ids.Contains(id)) ids.Add(id);
+            foreach (var z in text.Skip(1))
+            {
+                var t = z.Trim().Split(';');
+                if (t.Length < 2 || t[0].Length != 5) continue;
+                if (!zeilen.TryGetValue(t[0], out var zeile)) zeilen[t[0]] = zeile = new();
+                for (int i = 1; i < t.Length && i < kopf.Length; i++)
+                    if (double.TryParse(t[i], NumberStyles.Float, CultureInfo.InvariantCulture, out var v)) zeile[kopf[i]] = v;
             }
         }
+        return (zeilen, ids);
+    }
+
+    public List<(string id, string name, string gruppe, string einheit)> WerteInfo()
+    {
+        lock (_sperre) return _reihenfolge.Select(id => _werte[id]).Select(m => (m.Id, m.Name, m.Gruppe, m.Einheit)).ToList();
+    }
+
+    public string TagJson(string datum)
+    {
+        var (zeilen, ids) = TagLesen(datum);
         object daten;
         lock (_sperre)
         {

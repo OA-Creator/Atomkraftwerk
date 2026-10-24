@@ -12,6 +12,8 @@ public sealed class Server
     private readonly HttpListener _http = new();
     private readonly string _webOrdner;
     public string Adresse { get; private set; } = "";
+    public Auswertung? Auswertung { get; set; }
+    public PumpenSteuerung? Pumpe { get; set; }
 
     public Server(Anlage anlage, int port, string programmOrdner)
     {
@@ -56,6 +58,18 @@ public sealed class Server
                 Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(_anlage.VerlaufJson(id)));
                 return;
             }
+            if (pfad == "/api/auswertung/liste" && Auswertung != null)
+            {
+                Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(Auswertung.ListeJson()));
+                return;
+            }
+            if (pfad == "/api/auswertung" && Auswertung != null)
+            {
+                var zr = ctx.Request.QueryString["zeitraum"] ?? "heute";
+                var id = ctx.Request.QueryString["id"] ?? "";
+                Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(Auswertung.DatenJson(zr, id)));
+                return;
+            }
             if (pfad == "/api/tage")
             {
                 Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(_anlage.TageJson()));
@@ -65,6 +79,11 @@ public sealed class Server
             {
                 var datum = ctx.Request.QueryString["datum"] ?? DateTime.Now.ToString("yyyy-MM-dd");
                 Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(_anlage.TagJson(datum)));
+                return;
+            }
+            if (pfad == "/api/pumpe" && Pumpe != null)
+            {
+                Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(Pumpe.Json(ctx.Request.QueryString["ziel"], ctx.Request.QueryString["betrieb"], ctx.Request.QueryString["prozent"], ctx.Request.QueryString["standard"] == "1")));
                 return;
             }
             if (pfad == "/api/jetzt")
