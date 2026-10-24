@@ -12,6 +12,8 @@ Ein kleines Windows-Programm sammelt jede Sekunde die wichtigen Werte eines wass
 - **Strom:** FRITZ!DECT-200-Steckdose über die FRITZ!Box – Watt jetzt, Verbrauch heute, Ø pro Tag im Monat, Gesamt, Kosten (Standby zählt mit) und **Standby-Messung**: was der PC ausgeschaltet zieht (Ø Watt zwischen Herunterfahren und Neustart; die Steckdose darf dafür nicht abschalten)
 - **Auswertung:** Heute/Woche/Monat/Quartal/Jahr, Spitzen des Tages und **Kühlung-Check** (Abstand CPU zu Wasser bei gleicher Last – zeigt, ob sich der Kühler zusetzt)
 - **Alarm:** wird ein Wert rot, springt ein Fenster über allem auf – mit 45-Sekunden-Countdown und Knopf „Jetzt herunterfahren" – und eine Meldung geht aufs Handy (**ntfy** für Android, **Pushover** für iPhone, beide auch bei „Nicht stören")
+- **Steuerung im Leitstand:** Handy-Einstellungen (ntfy-Thema, Pushover-Schlüssel) eintragen und speichern, **Test-Alarm senden**, **PC herunterfahren** (mit Rückfrage)
+- **Atomkraftwerk.exe – ein Symbol für alles:** Doppelklick startet das Programm (falls aus) und öffnet den Leitstand als eigenes Fenster ohne Adressleiste; Fenster zu → das Symbol bleibt unten rechts bei den ausgeblendeten Symbolen (Tooltip mit Zustand, Wasser und Durchfluss, Rechtsklick-Menü: neu starten / beenden)
 - Min / Max / Ø für jeden Wert, Hell/Dunkel, QR-Code zum Öffnen am Handy, Hinweise per Maus-Tooltip
 - Dazu ein **InfoPanel-Plugin**, das Durchfluss, Ø-Durchfluss und PC-Watt auf ein InfoPanel-Display bringt
 
@@ -30,7 +32,7 @@ Alle Werte werden minütlich in `daten\JJJJ-MM-TT.csv` abgelegt.
 1. `release/Atomkraftwerk.zip` herunterladen und in einen festen Ordner entpacken, z. B. `C:\Atomkraftwerk`
 2. `atomkraftwerk.json` mit dem Editor öffnen und anpassen (siehe unten)
 3. **„Autostart einrichten.bat"** doppelklicken – das Programm startet sofort und künftig bei jeder Anmeldung (unsichtbar, über die Aufgabenplanung)
-4. Leitstand im Browser: <http://localhost:8090> (oder `Leitstand.url`)
+4. **„Atomkraftwerk.exe"** einmal doppelklicken – legt ein Desktop-Symbol und den Autostart für das Symbol unten rechts an und öffnet den Leitstand (im Browser geht auch <http://localhost:8090>)
 5. Fürs Handy: **„Handy freigeben.bat"** (Firewall-Freigabe nur im privaten Netz), dann im Leitstand auf **„Aufs Handy"** und den QR-Code scannen
 
 Beenden: **„Atomkraftwerk beenden.bat"** · Autostart wieder weg: **„Autostart entfernen.bat"** · Zum Testen mit Fenster: **„Atomkraftwerk starten.bat"**
@@ -72,6 +74,7 @@ Zusätzlich die gleichen Werte als Zahlen-Sensoren. Für die Wassertemperatur mi
 ## Selbst bauen
 
 - Programm: die DLLs aus dem InfoPanel-Programmordner nach `Programm\lib` kopieren (Liste in `lib\LIESMICH.txt`), dann `dotnet build -c Release` im Ordner `Programm`
+- Symbol (`Symbol\AtomkraftwerkSymbol.cs`, .NET Framework 4, ohne Zusatzpakete): z. B. `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /target:winexe /win32icon:atomkraftwerk.ico /r:Microsoft.CSharp.dll /out:Atomkraftwerk.exe AtomkraftwerkSymbol.cs`
 - Plugin: braucht den Quellcode von InfoPanel daneben (`..\..\infopanel`) oder `-p:InfoPanelSrc=<Pfad>`
 
 ## Hinweise

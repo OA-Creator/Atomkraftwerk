@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using System.Net;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Text;
 
 namespace Atomkraftwerk;
@@ -14,10 +17,13 @@ public sealed class Server
     public string Adresse { get; private set; } = "";
     public Auswertung? Auswertung { get; set; }
     public PumpenSteuerung? Pumpe { get; set; }
+    public Einstellungen? Einst { get; set; }
+    private readonly string _ordner;
 
     public Server(Anlage anlage, int port, string programmOrdner)
     {
         _anlage = anlage;
+        _ordner = programmOrdner;
         _webOrdner = Path.Combine(programmOrdner, "web");
         // Erst fürs ganze Heimnetz versuchen, sonst nur auf diesem PC
         try
@@ -86,6 +92,19 @@ public sealed class Server
                 Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(Pumpe.Json(ctx.Request.QueryString["ziel"], ctx.Request.QueryString["betrieb"], ctx.Request.QueryString["prozent"], ctx.Request.QueryString["standard"] == "1")));
                 return;
             }
+            if (pfad == "/api/handy" && Einst != null)
+            {
+                Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(HandyJson(ctx)));
+                return;
+            }
+            if (pfad == "/api/herunterfahren")
+            {
+                if (ctx.Request.HttpMethod != "POST") { Senden(ctx, 405, "text/plain", Encoding.UTF8.GetBytes("nur POST")); return; }
+                Log.Schreiben("PC herunterfahren – im Leitstand angefordert.");
+                Process.Start(new ProcessStartInfo("shutdown", "/s /t 5 /c \"Atomkraftwerk: PC wird heruntergefahren\"") { UseShellExecute = false, CreateNoWindow = true });
+                Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes("{\"ok\":true}"));
+                return;
+            }
             if (pfad == "/api/jetzt")
             {
                 Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(_anlage.AlsJson()));
@@ -108,6 +127,54 @@ public sealed class Server
             Senden(ctx, 404, "text/plain", Encoding.UTF8.GetBytes("nicht gefunden"));
         }
         catch (Exception e) { Log.Schreiben("Webfehler: " + e.Message); }
+    }
+
+    // Handy-Einstellungen lesen, speichern (POST aktion=speichern) oder Test senden (POST aktion=test)
+    private string HandyJson(HttpListenerContext ctx)
+    {
+        var h = Einst!.Handy;
+        var q = ctx.Request.QueryString;
+        var meldung = "";
+        if (ctx.Request.HttpMethod == "POST" && q["aktion"] == "speichern")
+        {
+            var srv = (q["ntfyServer"] ?? "").Trim();
+            h.NtfyServer = srv == "" ? "https://ntfy.sh" : srv;
+            h.NtfyThema = (q["ntfyThema"] ?? "").Trim();
+            h.PushoverBenutzer = (q["pushoverBenutzer"] ?? "").Trim();
+            var tok = (q["pushoverToken"] ?? "").Trim();
+            if (tok != "") h.PushoverToken = tok;
+            if (q["tokenLoeschen"] == "1") h.PushoverToken = "";
+            var ok = KonfigWert("ntfyServer", h.NtfyServer) & KonfigWert("ntfyThema", h.NtfyThema)
+                   & KonfigWert("pushoverBenutzer", h.PushoverBenutzer) & KonfigWert("pushoverToken", h.PushoverToken);
+            Log.Schreiben("Handy-Einstellungen im Leitstand " + (ok ? "gespeichert." : "geändert, aber nicht alles in atomkraftwerk.json gefunden."));
+            meldung = ok ? "Gespeichert." : "Geändert, aber nur bis zum Neustart (Eintrag fehlt in atomkraftwerk.json).";
+        }
+        else if (ctx.Request.HttpMethod == "POST" && q["aktion"] == "test")
+        {
+            Log.Schreiben("Handy-Test im Leitstand angefordert.");
+            meldung = "Test: " + Handy.SendenAsync(h, "Atomkraftwerk – TEST", "Testmeldung aus dem Leitstand. Wenn das ankommt, klappt der Alarm aufs Handy.", test: true).GetAwaiter().GetResult();
+        }
+        return JsonSerializer.Serialize(new
+        {
+            ntfyServer = h.NtfyServer, ntfyThema = h.NtfyThema, pushoverBenutzer = h.PushoverBenutzer,
+            pushoverToken = h.PushoverToken != "", meldung
+        });
+    }
+
+    // nur diesen einen Eintrag in atomkraftwerk.json ändern, alles andere (auch das Kennwort) bleibt unberührt
+    private bool KonfigWert(string schluessel, string wert)
+    {
+        try
+        {
+            var pfad = Path.Combine(_ordner, "atomkraftwerk.json");
+            var text = File.ReadAllText(pfad);
+            var muster = "(\"" + schluessel + "\"\\s*:\\s*)\"(?:[^\"\\\\]|\\\\.)*\"";
+            if (!Regex.IsMatch(text, muster)) return false;
+            var neu = Regex.Replace(text, muster, m => m.Groups[1].Value + JsonSerializer.Serialize(wert), RegexOptions.None);
+            if (neu != text) File.WriteAllText(pfad, neu);
+            return true;
+        }
+        catch (Exception ex) { Log.Schreiben("Einstellung nicht gespeichert: " + ex.Message); return false; }
     }
 
     private static string Typ(string datei) => Path.GetExtension(datei).ToLowerInvariant() switch

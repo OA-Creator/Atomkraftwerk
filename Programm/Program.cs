@@ -45,6 +45,7 @@ try
     server = new Server(anlage, e.Port, ordner);
     server.Auswertung = new Auswertung(anlage, fritz);
     server.Pumpe = pumpe;
+    server.Einst = e;
     _ = server.LaufenAsync(stopp.Token);
     Log.Schreiben("Leitstand erreichbar: " + server.Adresse);
 }

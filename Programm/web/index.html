@@ -26,6 +26,7 @@
   --balken:#BFE3EC; --aktiv:#EEF1F4; --gruen:#1F9E3D; --rahmen:rgba(31,158,61,.35);
 }
 *{box-sizing:border-box}
+@media (min-width:761px){html{zoom:.7}}
 html,body{margin:0;background:var(--grund);color:var(--text);font-family:var(--sans)}
 a{color:var(--bernstein)}
 button{font:inherit}
@@ -62,6 +63,12 @@ main{flex:999 1 640px;min-width:0;display:grid;grid-template-columns:repeat(12,m
 .pumpe{margin:0 auto;align-self:center;font-family:var(--mono);font-size:24px;font-weight:700;color:var(--bernstein)}
 .pfeil.steigt{color:var(--alarm)} .pfeil.faellt{color:var(--ok)} .pfeil.steht{color:var(--leise)}
 .felder{display:grid;gap:10px}
+.eingabe{display:block;width:100%;box-sizing:border-box;margin-top:6px;min-height:38px;padding:0 10px;background:var(--panel);color:var(--text);border:1px solid var(--linie2);border-radius:8px;font:15px var(--mono)}
+.eingabe:focus{outline:none;border-color:var(--bernstein)}
+.reihe{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
+.knopf.rot{color:var(--alarm);border-color:var(--alarm-rand);background:var(--alarm-grund)}
+.knopf.rot:hover{border-color:var(--alarm)}
+.hmeldung{color:var(--leise);font-size:14px}
 .feld{background:var(--feld);border-radius:8px;padding:7px 13px 11px;min-width:0}
 .feld small{display:block;font-size:13.5px;font-weight:600;letter-spacing:.1em;color:var(--leise)}
 .feld b{display:block;font-family:var(--mono);font-weight:500;font-size:21px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -126,7 +133,7 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
   .s4{grid-column:span 12}
   .panel{padding:18px}
   .wasserzahl{font-size:72px!important}
-  .unten{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));background:var(--kopf);border:1px solid var(--linie);border-radius:12px;padding:6px;z-index:6}
+  .unten{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));background:var(--kopf);border:1px solid var(--linie);border-radius:12px;padding:6px;z-index:6}
   .unten a{min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;color:var(--text2);text-decoration:none;font-size:14px}
   .unten a.an{background:var(--aktiv);color:var(--bernstein);font-weight:600}
   .laufzeit{display:none}
@@ -161,6 +168,7 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
     <a href="#board">Board-Wächter</a>
     <a href="#strom">Strom &amp; Kosten</a>
     <a href="#auswertung">Auswertung</a>
+    <a href="#steuerung">Steuerung</a>
     <div class="titel" style="padding-top:18px">AUSBAU</div>
     <a href="#" class="spaeter" aria-disabled="true" data-tip="Balkonkraftwerk: erzeugter Strom – kommt 2027">Erzeugung <span>2027</span></a>
     <a href="#" class="spaeter" aria-disabled="true" data-tip="Balkonkraftwerk: Batteriespeicher – kommt 2027">Speicher <span>2027</span></a>
@@ -292,6 +300,22 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
       <table class="spitzen" style="margin-top:14px"><thead><tr><th>NEXT ZEIGT</th><th style="text-align:right">MINUTEN</th><th style="text-align:right">Ø ABSTAND</th></tr></thead><tbody id="akuehlfluss"></tbody></table>
       </details>
     </section>
+    <section class="panel s12" id="steuerung">
+      <h2>STEUERUNG <span>Handy-Alarm und PC</span></h2>
+      <div class="felder" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">
+        <label class="feld" data-tip="Adresse des ntfy-Servers. Normal: https://ntfy.sh"><small>NTFY-SERVER</small><input class="eingabe" id="hserver" autocomplete="off" spellcheck="false" placeholder="https://ntfy.sh"></label>
+        <label class="feld" data-tip="Android: das Thema, das du in der ntfy-App abonniert hast. Geheim halten – wer das Thema kennt, liest mit. Leer = kein ntfy"><small>NTFY-THEMA · ANDROID</small><input class="eingabe" id="hthema" autocomplete="off" spellcheck="false"></label>
+        <label class="feld" data-tip="iPhone: „User Key“ aus deinem Pushover-Konto. Leer = kein Pushover"><small>PUSHOVER USER KEY · IPHONE</small><input class="eingabe" id="hbenutzer" autocomplete="off" spellcheck="false"></label>
+        <label class="feld" data-tip="iPhone: „API Token“ deiner Pushover-Anwendung. Wird aus Sicherheitsgründen nicht angezeigt – leer lassen, dann bleibt der gespeicherte"><small>PUSHOVER API TOKEN</small><input class="eingabe" id="htoken" type="password" autocomplete="new-password" spellcheck="false"></label>
+      </div>
+      <div class="reihe">
+        <button class="knopf" type="button" id="hspeichern" data-tip="Einstellungen übernehmen und in atomkraftwerk.json speichern">Speichern</button>
+        <button class="knopf" type="button" id="htest" data-tip="Schickt eine Testmeldung an alle eingetragenen Handys">Test-Alarm senden</button>
+        <span class="hmeldung" id="hmeldung"></span>
+        <span style="flex:1"></span>
+        <button class="knopf rot" type="button" id="pcaus" data-tip="Fährt den PC nach einer Rückfrage in 5 Sekunden herunter">PC herunterfahren</button>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -301,6 +325,7 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
   <a href="#board">Board</a>
   <a href="#strom">Strom</a>
   <a href="#auswertung">Analyse</a>
+  <a href="#steuerung">Steuern</a>
 </nav>
 
 <dialog id="qr" aria-labelledby="qrtitel">
@@ -475,6 +500,8 @@ async function verlauf() {
 }
 
 // Hinweise: sofort beim Drüberfahren, auf dem Handy per Antippen (3 s)
+// Seite am PC auf 70 % verkleinert (CSS zoom) – Mauskoordinaten dafür umrechnen
+const ZOOM = () => parseFloat(getComputedStyle(document.documentElement).zoom) || 1;
 const tip = document.createElement('div'); tip.className = 'tip'; document.body.appendChild(tip);
 let tipEl = null, tipUhr;
 function tipAus() { tip.style.display = 'none'; tipEl = null; }
@@ -484,7 +511,7 @@ function tipAn(el, x, y) {
   let l = x + 16, t = y + 18;
   if (l + r.width > innerWidth - 8) l = x - r.width - 12;
   if (t + r.height > innerHeight - 8) t = y - r.height - 12;
-  tip.style.left = Math.max(8, l) + 'px'; tip.style.top = Math.max(8, t) + 'px';
+  const zf = ZOOM(); tip.style.left = Math.max(8, l) / zf + 'px'; tip.style.top = Math.max(8, t) / zf + 'px';
 }
 document.addEventListener('pointermove', e => {
   if (e.pointerType !== 'mouse') return;
@@ -616,8 +643,9 @@ function zeichnen() {
 }
 function zeigen(e) {
   if (!geo) return;
-  const b = $('adia').getBoundingClientRect(), { p, von, bis, L, R } = geo;
-  const t = von + (e.clientX - b.left - L) / (b.width - L - R) * (bis - von);
+  const zf = ZOOM(), r0 = $('adia').getBoundingClientRect(), { p, von, bis, L, R } = geo;
+  const b = { left: r0.left / zf, width: r0.width / zf }, mx = e.clientX / zf;
+  const t = von + (mx - b.left - L) / (b.width - L - R) * (bis - von);
   let best = 0; p.forEach((q, i) => { if (Math.abs(q.t - t) < Math.abs(p[best].t - t)) best = i; });
   const q = p[best], xs = L + (q.t - von) / (bis - von) * (b.width - L - R);
   const z1 = $('azeiger'); if (z1) { z1.setAttribute('x1', xs); z1.setAttribute('x2', xs); }
@@ -719,6 +747,39 @@ setInterval(() => pumpeLaden(), 2000);
 laden().then(verlauf);
 setInterval(laden, 2000);
 setInterval(verlauf, 10000);
+
+// ---------- Steuerung: Handy-Alarm und PC herunterfahren ----------
+let handyGeladen = false;
+async function handy(aktion) {
+  const q = new URLSearchParams();
+  let opt = {};
+  if (aktion) {
+    q.set('aktion', aktion);
+    if (aktion === 'speichern') {
+      q.set('ntfyServer', $('hserver').value); q.set('ntfyThema', $('hthema').value);
+      q.set('pushoverBenutzer', $('hbenutzer').value); q.set('pushoverToken', $('htoken').value);
+    }
+    opt = { method: 'POST' };
+    $('hmeldung').textContent = aktion === 'test' ? 'sende …' : 'speichere …';
+  }
+  try {
+    const d = await (await fetch('/api/handy?' + q, opt)).json();
+    if (!aktion || aktion === 'speichern') {
+      $('hserver').value = d.ntfyServer || ''; $('hthema').value = d.ntfyThema || ''; $('hbenutzer').value = d.pushoverBenutzer || '';
+      $('htoken').value = ''; $('htoken').placeholder = d.pushoverToken ? '••••••• gespeichert' : 'nicht eingetragen';
+    }
+    $('hmeldung').textContent = d.meldung || '';
+    handyGeladen = true;
+  } catch (e) { $('hmeldung').textContent = 'Keine Verbindung zum Programm'; }
+}
+$('hspeichern').addEventListener('click', () => handy('speichern'));
+$('htest').addEventListener('click', () => handy('test'));
+$('pcaus').addEventListener('click', async () => {
+  if (!confirm('PC jetzt herunterfahren?')) return;
+  try { await fetch('/api/herunterfahren', { method: 'POST' }); $('hmeldung').textContent = 'PC fährt in 5 Sekunden herunter …'; }
+  catch (e) { $('hmeldung').textContent = 'Keine Verbindung zum Programm'; }
+});
+handy();
 </script>
 </body>
 </html>

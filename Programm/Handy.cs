@@ -20,41 +20,46 @@ public static class Handy
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
 
     public static void Senden(HandyEinstellungen h, string titel, string text, bool test = false)
+        => _ = SendenAsync(h, titel, text, test);
+
+    // schickt die Meldung und gibt zurück, was geklappt hat (für den Test-Knopf im Leitstand)
+    public static async Task<string> SendenAsync(HandyEinstellungen h, string titel, string text, bool test = false)
     {
-        _ = Task.Run(async () =>
+        var ergebnis = new List<string>();
+        if (!string.IsNullOrWhiteSpace(h.NtfyThema))
         {
-            if (!string.IsNullOrWhiteSpace(h.NtfyThema))
+            try
             {
-                try
+                var r = await Http.PostAsJsonAsync(h.NtfyServer.TrimEnd('/') + "/", new
                 {
-                    var r = await Http.PostAsJsonAsync(h.NtfyServer.TrimEnd('/') + "/", new
-                    {
-                        topic = h.NtfyThema,
-                        title = titel,
-                        message = text,
-                        priority = test ? 4 : 5,
-                        tags = new[] { test ? "test_tube" : "rotating_light" }
-                    });
-                    Log.Schreiben("Handy (ntfy): " + (r.IsSuccessStatusCode ? "gesendet" : "Fehler " + (int)r.StatusCode));
-                }
-                catch (Exception ex) { Log.Schreiben("Handy (ntfy) nicht erreichbar: " + ex.Message); }
+                    topic = h.NtfyThema,
+                    title = titel,
+                    message = text,
+                    priority = test ? 4 : 5,
+                    tags = new[] { test ? "test_tube" : "rotating_light" }
+                });
+                var t = r.IsSuccessStatusCode ? "gesendet" : "Fehler " + (int)r.StatusCode;
+                Log.Schreiben("Handy (ntfy): " + t); ergebnis.Add("ntfy " + t);
             }
-            if (!string.IsNullOrWhiteSpace(h.PushoverToken) && !string.IsNullOrWhiteSpace(h.PushoverBenutzer))
+            catch (Exception ex) { Log.Schreiben("Handy (ntfy) nicht erreichbar: " + ex.Message); ergebnis.Add("ntfy nicht erreichbar"); }
+        }
+        if (!string.IsNullOrWhiteSpace(h.PushoverToken) && !string.IsNullOrWhiteSpace(h.PushoverBenutzer))
+        {
+            try
             {
-                try
+                var felder = new Dictionary<string, string>
                 {
-                    var felder = new Dictionary<string, string>
-                    {
-                        ["token"] = h.PushoverToken, ["user"] = h.PushoverBenutzer,
-                        ["title"] = titel, ["message"] = text,
-                        ["priority"] = test ? "1" : "2", ["sound"] = "siren"
-                    };
-                    if (!test) { felder["retry"] = "30"; felder["expire"] = "600"; }
-                    var r = await Http.PostAsync("https://api.pushover.net/1/messages.json", new FormUrlEncodedContent(felder));
-                    Log.Schreiben("Handy (Pushover): " + (r.IsSuccessStatusCode ? "gesendet" : "Fehler " + (int)r.StatusCode));
-                }
-                catch (Exception ex) { Log.Schreiben("Handy (Pushover) nicht erreichbar: " + ex.Message); }
+                    ["token"] = h.PushoverToken, ["user"] = h.PushoverBenutzer,
+                    ["title"] = titel, ["message"] = text,
+                    ["priority"] = test ? "1" : "2", ["sound"] = "siren"
+                };
+                if (!test) { felder["retry"] = "30"; felder["expire"] = "600"; }
+                var r = await Http.PostAsync("https://api.pushover.net/1/messages.json", new FormUrlEncodedContent(felder));
+                var t = r.IsSuccessStatusCode ? "gesendet" : "Fehler " + (int)r.StatusCode;
+                Log.Schreiben("Handy (Pushover): " + t); ergebnis.Add("Pushover " + t);
             }
-        });
+            catch (Exception ex) { Log.Schreiben("Handy (Pushover) nicht erreichbar: " + ex.Message); ergebnis.Add("Pushover nicht erreichbar"); }
+        }
+        return ergebnis.Count == 0 ? "nichts eingetragen" : string.Join(" · ", ergebnis);
     }
 }
