@@ -9,7 +9,7 @@ Ein kleines Windows-Programm sammelt jede Sekunde die wichtigen Werte eines wass
 - **Pumpensteuerung:** Pumpe am Pumpen-Header des Mainboards (z. B. CPU_OPT) – Startschub beim Start, dann **Automatik nach Durchfluss** (so langsam wie möglich, aber z. B. 60 l/h) oder **Hand** 25–100 %, alles im Leitstand einstellbar; beim Beenden übernimmt wieder das BIOS
 - **Prozessor & Grafik:** Temperatur, Leistung, Last, RAM (über LibreHardwareMonitor)
 - **Board-Wächter:** VRM-Temperatur und SoC-Spannung mit gelber/roter Grenze
-- **Strom:** FRITZ!DECT-200-Steckdose über die FRITZ!Box – Watt jetzt, Verbrauch heute, Ø pro Tag im Monat, Gesamt, Kosten (Standby zählt mit)
+- **Strom:** FRITZ!DECT-200-Steckdose über die FRITZ!Box – Watt jetzt, Verbrauch heute, Ø pro Tag im Monat, Gesamt, Kosten (Standby zählt mit) und **Standby-Messung**: was der PC ausgeschaltet zieht (Ø Watt zwischen Herunterfahren und Neustart; die Steckdose darf dafür nicht abschalten)
 - **Auswertung:** Heute/Woche/Monat/Quartal/Jahr, Spitzen des Tages und **Kühlung-Check** (Abstand CPU zu Wasser bei gleicher Last – zeigt, ob sich der Kühler zusetzt)
 - **Alarm:** wird ein Wert rot, springt ein Fenster über allem auf – mit 45-Sekunden-Countdown und Knopf „Jetzt herunterfahren" – und eine Meldung geht aufs Handy (**ntfy** für Android, **Pushover** für iPhone, beide auch bei „Nicht stören")
 - Min / Max / Ø für jeden Wert, Hell/Dunkel, QR-Code zum Öffnen am Handy, Hinweise per Maus-Tooltip

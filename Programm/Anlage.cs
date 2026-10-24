@@ -208,7 +208,8 @@ public sealed class Anlage
                 {
                     eingerichtet = Strom.Eingerichtet, verbunden = Strom.Verbunden, meldung = Strom.Meldung, stand = Strom.Stand,
                     heuteKWh = Rund(Strom.HeuteKWh), monatKWh = Rund(Strom.MonatKWh), schnittTagKWh = Rund(Strom.SchnittTagKWh),
-                    gesamtKWh = Rund(Strom.GesamtKWh), kostenHeuteEuro = Rund(Strom.KostenHeuteEuro), kostenMonatEuro = Rund(Strom.KostenMonatEuro)
+                    gesamtKWh = Rund(Strom.GesamtKWh), kostenHeuteEuro = Rund(Strom.KostenHeuteEuro), kostenMonatEuro = Rund(Strom.KostenMonatEuro),
+                    standbyWatt = Strom.StandbyWatt, standbyKWh = Strom.StandbyKWh, standbyVon = Strom.StandbyVon, standbyBis = Strom.StandbyBis
                 },
                 werte = _reihenfolge.Select(id => _werte[id]).Select(m => new
                 {

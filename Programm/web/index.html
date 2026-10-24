@@ -261,6 +261,7 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
         <div class="feld" data-tip="Verbrauch seit Beginn der Messung"><small>GESAMT</small><b id="sgesamt">— <em>kWh</em></b></div>
         <div class="feld" id="skostentip" data-tip="Stromkosten in diesem Monat (Strompreis steht in atomkraftwerk.json)"><small>KOSTEN MONAT</small><b id="skosten" style="color:var(--bernstein)">— <em>€</em></b></div>
         <div class="feld" data-tip="Wie lange der PC heute läuft"><small>LAUFZEIT HEUTE</small><b id="laufzeit2">—</b></div>
+        <div class="feld" id="sstandbytip" data-tip="Was an der Steckdose gezogen wurde, während der PC zuletzt aus war (aus dem Zähler der FRITZ!Box). Wird beim nächsten Start berechnet"><small>STANDBY (PC AUS)</small><b id="sstandby">— <em>W</em></b></div>
       </div>
     </section>
     <section class="panel s12" id="auswertung">
@@ -430,6 +431,10 @@ async function laden() {
   $('sheutetip').dataset.tip = 'Verbrauch heute, Standby mitgezählt' + (sd.kostenHeuteEuro == null ? '' : ` · Kosten heute ${z(sd.kostenHeuteEuro, 2)} €`);
   $('sschnitt').innerHTML = zahlEinh(sd.schnittTagKWh, 2, 'kWh');
   $('sgesamt').innerHTML = zahlEinh(sd.gesamtKWh, 1, 'kWh');
+  $('sstandby').innerHTML = sd.standbyWatt == null ? '— <em>W</em>' : 'Ø ' + zahlEinh(sd.standbyWatt, 1, 'W');
+  $('sstandbytip').dataset.tip = sd.standbyWatt == null
+    ? 'Was an der Steckdose gezogen wird, während der PC aus ist. Wird beim nächsten Start nach einem Herunterfahren berechnet'
+    : `PC aus von ${sd.standbyVon} bis ${sd.standbyBis} Uhr: ${z(sd.standbyKWh, 3)} kWh, im Schnitt ${z(sd.standbyWatt, 1)} W` + (sd.standbyKWh != null && d.strompreisCentProKWh ? ` · Kosten ${z(sd.standbyKWh * d.strompreisCentProKWh / 100, 2)} €` : '');
   $('skosten').innerHTML = zahlEinh(sd.kostenMonatEuro, 2, '€');
   $('skostentip').dataset.tip = `Stromkosten in diesem Monat bei ${z(d.strompreisCentProKWh, 2)} Cent/kWh (Preis steht in atomkraftwerk.json)`;
   const mk = $('strommarke');

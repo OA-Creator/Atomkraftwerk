@@ -60,7 +60,8 @@ public sealed class HardwareQuelle : IDisposable
         _gpuLuefter = Finde(g1, SensorType.Fan, "GPU Fan");
         GpuName = gpu?.Name ?? "";
 
-        var mem = AlleHardware.Where(h => h.HardwareType == HardwareType.Memory).ToList();
+        // nur der echte RAM ("Total Memory") – "Virtual Memory" (RAM + Auslagerungsdatei) hat denselben Sensornamen
+        var mem = AlleHardware.Where(h => h.HardwareType == HardwareType.Memory && !h.Name.Contains("Virtual", StringComparison.OrdinalIgnoreCase)).ToList();
         _ram = Finde(mem, SensorType.Data, "Memory Used");
 
         // Board-Chip ITE IT8696E (Gigabyte X870E Aorus Elite): Zuordnung per Vergleich mit HWiNFO am 23.10.2026

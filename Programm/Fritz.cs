@@ -29,6 +29,20 @@ public sealed class StromStand
     public double? KostenHeuteEuro { get; set; }
     public double? KostenMonatEuro { get; set; }
     public string Stand { get; set; } = "";
+    // Standby: Verbrauch in der Zeit, in der der PC zuletzt aus war
+    public double? StandbyWatt { get; set; }
+    public double? StandbyKWh { get; set; }
+    public string StandbyVon { get; set; } = "";
+    public string StandbyBis { get; set; } = "";
+}
+
+// Merkzettel für die Standby-Rechnung (wird jede Minute geschrieben, überlebt das Herunterfahren)
+public sealed class StandbyMerker
+{
+    public double ZaehlerWh { get; set; }          // Zählerstand der Steckdose beim letzten Auslesen
+    public DateTime ZaehlerZeit { get; set; }
+    public double LaufWhSeitZaehler { get; set; }  // vom PC verbrauchte Wh seit diesem Auslesen (aus den 10-s-Wattwerten)
+    public DateTime ZuletztAn { get; set; }        // letztes Lebenszeichen des Programms
 }
 
 public sealed class FritzQuelle
@@ -45,6 +59,16 @@ public sealed class FritzQuelle
     private readonly string _beginnDatei;
     private DateTime? _messbeginn;
 
+    // Standby-Rechnung
+    private readonly DateTime _programmStart = DateTime.Now;
+    private StandbyMerker? _alterMerker;           // vom letzten Programmlauf
+    private double? _zaehlerWh; private DateTime _zaehlerZeit;
+    private double _laufWhSeitZaehler, _laufWhSeitStart;
+    private DateTime _letzteWattZeit = DateTime.MinValue, _letzterMerker = DateTime.MinValue;
+    private bool _standbyGerechnet;
+    private string MerkerDatei => Path.Combine(Path.GetDirectoryName(_beginnDatei)!, "standby-merker.json");
+    private string StandbyDatei => Path.Combine(Path.GetDirectoryName(_beginnDatei)!, "standby.json");
+
     public FritzQuelle(Einstellungen e, string datenOrdner)
     {
         // Tag, an dem die Strommessung begann (für einen ehrlichen Ø pro Tag im ersten Monat)
@@ -53,6 +77,16 @@ public sealed class FritzQuelle
         {
             if (File.Exists(_beginnDatei) && DateTime.TryParse(File.ReadAllText(_beginnDatei).Trim(), CultureInfo.InvariantCulture, DateTimeStyles.None, out var b))
                 _messbeginn = b.Date;
+        }
+        catch { }
+        try { if (File.Exists(MerkerDatei)) _alterMerker = System.Text.Json.JsonSerializer.Deserialize<StandbyMerker>(File.ReadAllText(MerkerDatei), Einstellungen.Json); } catch { }
+        try
+        {
+            if (File.Exists(StandbyDatei))
+            {
+                var alt = System.Text.Json.JsonSerializer.Deserialize<StromStand>(File.ReadAllText(StandbyDatei), Einstellungen.Json);
+                if (alt != null) { Stand.StandbyWatt = alt.StandbyWatt; Stand.StandbyKWh = alt.StandbyKWh; Stand.StandbyVon = alt.StandbyVon; Stand.StandbyBis = alt.StandbyBis; }
+            }
         }
         catch { }
         _f = e.Fritz;
@@ -88,20 +122,60 @@ public sealed class FritzQuelle
         if (mw is null) return; // Sitzung abgelaufen -> nächster Durchlauf meldet neu an
         _watt = double.TryParse(mw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var m) ? m / 1000.0 : null;
 
+        // Verbrauch des laufenden PCs mitzählen (Watt × Zeit), für die Standby-Rechnung
+        var jetzt = DateTime.Now;
+        if (_watt is double w && _letzteWattZeit != DateTime.MinValue)
+        {
+            var wh = w * Math.Min(60, (jetzt - _letzteWattZeit).TotalSeconds) / 3600.0;
+            _laufWhSeitZaehler += wh; _laufWhSeitStart += wh;
+        }
+        _letzteWattZeit = jetzt;
+
         // Verbrauchsverlauf der FRITZ!Box alle 5 Minuten (zählt auch Nacht und Standby)
         if ((DateTime.Now - _letzteStatistik).TotalMinutes >= 5)
         {
             var gesamt = await BefehlAsync("getswitchenergy");
             if (gesamt is not null && double.TryParse(gesamt.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var wh))
+            {
                 Stand.GesamtKWh = wh / 1000.0;
+                StandbyRechnen(wh);
+                _zaehlerWh = wh; _zaehlerZeit = DateTime.Now; _laufWhSeitZaehler = 0;
+            }
 
             var xml = await BefehlAsync("getbasicdevicestats");
             if (xml is not null) StatistikAuswerten(xml);
             _letzteStatistik = DateTime.Now;
         }
+        // Merkzettel jede Minute schreiben, damit er beim Herunterfahren aktuell ist
+        if (_zaehlerWh is double zw && (DateTime.Now - _letzterMerker).TotalSeconds >= 60)
+        {
+            _letzterMerker = DateTime.Now;
+            var merker = new StandbyMerker { ZaehlerWh = zw, ZaehlerZeit = _zaehlerZeit, LaufWhSeitZaehler = _laufWhSeitZaehler, ZuletztAn = DateTime.Now };
+            try { File.WriteAllText(MerkerDatei, System.Text.Json.JsonSerializer.Serialize(merker, Einstellungen.Json)); } catch { }
+        }
         Stand.Verbunden = _watt is not null;
         Stand.Meldung = Stand.Verbunden ? "" : "Steckdose meldet keinen Wert";
         Stand.Stand = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    // Beim ersten Zählerstand nach dem Start: was hat die Steckdose verbraucht, während der PC aus war?
+    // Zählerdifferenz minus das, was der PC vor dem Herunterfahren und seit dem Programmstart selbst verbraucht hat.
+    private void StandbyRechnen(double whJetzt)
+    {
+        if (_standbyGerechnet) return;
+        _standbyGerechnet = true;
+        var m = _alterMerker;
+        if (m is null) return;
+        var stunden = (_programmStart - m.ZuletztAn).TotalHours;
+        if (stunden < 10.0 / 60) return; // nur Programm neu gestartet, PC war nicht aus
+        var standbyWh = whJetzt - m.ZaehlerWh - m.LaufWhSeitZaehler - _laufWhSeitStart;
+        if (standbyWh < 0) standbyWh = 0;
+        Stand.StandbyKWh = Math.Round(standbyWh / 1000.0, 3);
+        Stand.StandbyWatt = Math.Round(standbyWh / stunden, 1);
+        Stand.StandbyVon = m.ZuletztAn.ToString("dd.MM. HH:mm");
+        Stand.StandbyBis = _programmStart.ToString("dd.MM. HH:mm");
+        Log.Schreiben($"Strom: Standby {Stand.StandbyVon} – {Stand.StandbyBis}: {Math.Round(standbyWh)} Wh, Ø {Stand.StandbyWatt} W.");
+        try { File.WriteAllText(StandbyDatei, System.Text.Json.JsonSerializer.Serialize(Stand, Einstellungen.Json)); } catch { }
     }
 
     private void StatistikAuswerten(string xml)
