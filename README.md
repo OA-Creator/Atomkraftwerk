@@ -6,7 +6,7 @@ Ein kleines Windows-Programm sammelt jede Sekunde die wichtigen Werte eines wass
 
 - **Kühlung:** Wassertemperatur und Lüfter aus der iCUE-Sensorprotokollierung, mit Trendpfeil und 30-Minuten-Verlauf
 - **Durchfluss:** Aquacomputer high flow NEXT über USB (l/h, Leitfähigkeit, Wasserqualität, Temperatur)
-- **Pumpensteuerung:** Pumpe am Board-Anschluss (z. B. CPU_OPT) – Startschub beim Start, dann **Automatik nach Durchfluss** (so langsam wie möglich, aber z. B. 60 l/h) oder **Hand** 25–100 %, alles im Leitstand einstellbar; beim Beenden übernimmt wieder das BIOS
+- **Pumpensteuerung:** Pumpe am Pumpen-Header des Mainboards (z. B. CPU_OPT) – Startschub beim Start, dann **Automatik nach Durchfluss** (so langsam wie möglich, aber z. B. 60 l/h) oder **Hand** 25–100 %, alles im Leitstand einstellbar; beim Beenden übernimmt wieder das BIOS
 - **Prozessor & Grafik:** Temperatur, Leistung, Last, RAM (über LibreHardwareMonitor)
 - **Board-Wächter:** VRM-Temperatur und SoC-Spannung mit gelber/roter Grenze
 - **Strom:** FRITZ!DECT-200-Steckdose über die FRITZ!Box – Watt jetzt, Verbrauch heute, Ø pro Tag im Monat, Gesamt, Kosten (Standby zählt mit)
@@ -77,6 +77,7 @@ Zusätzlich die gleichen Werte als Zahlen-Sensoren. Für die Wassertemperatur mi
 ## Hinweise
 
 - Die Board-Sensoren sind für das **Gigabyte X870E Aorus Elite WiFi7 (ITE IT8696E)** zugeordnet (`Quellen.cs`). Andere Boards brauchen eine eigene Zuordnung.
+- **Die Pumpe muss an einem Pumpen-Header des Mainboards hängen** (je nach Board z. B. CPU_OPT, AIO_PUMP oder SYS_FAN_PUMP). Eine Pumpe an einem iCUE-Anschluss (Commander, LINK Hub, DUO) kann das Atomkraftwerk nicht steuern – die regelt nur iCUE.
 - Pumpensteuerung: im BIOS für den Pumpenanschluss eine sichere Grundeinstellung setzen – die gilt immer, wenn das Programm nicht läuft. Gigabyte Control Center nicht parallel betreiben (greift auf denselben Board-Chip zu).
 - Die Laufzeit zählt nur, solange das Programm läuft; der Stromverbrauch kommt aus der FRITZ!Box und zählt auch bei ausgeschaltetem PC.
 - Enthält [LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor) (MPL 2.0) und HidSharp (Apache 2.0) im Release-Zip.
