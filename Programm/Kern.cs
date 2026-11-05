@@ -13,6 +13,7 @@ public class Grenzen
     public double VrmAlarmC { get; set; } = 90;
     public double SocWarnV { get; set; } = 1.28;
     public double SocAlarmV { get; set; } = 1.30;
+    public double CpuWarnC { get; set; } = 85;
     public double CpuAlarmC { get; set; } = 90;
     public double GpuHotspotAlarmC { get; set; } = 105;
     public double WasserWarnC { get; set; } = 35;
@@ -24,6 +25,8 @@ public class Grenzen
     public double FlussAlarmAbWasserC { get; set; } = 35;
     public double LaufwerkWarnC { get; set; } = 60;
     public double LaufwerkAlarmC { get; set; } = 70;
+    // Luftfühler im Gehäuse: nur gelb (Leitstand), nie rot – kein Alarmfenster, nichts aufs Handy
+    public double LuftWarnC { get; set; } = 45;
 }
 
 public class Einstellungen
@@ -37,6 +40,9 @@ public class Einstellungen
     public FritzEinstellungen Fritz { get; set; } = new();
     // Eigene Namen für die Laufwerke: "Modellname": "Anzeigename"
     public Dictionary<string, string> LaufwerkNamen { get; set; } = new();
+    // iCUE-Temperaturfühler, die Luft messen (Teil des Namens genügt) – alle anderen gelten als Wasser
+    public List<string> LuftFuehler { get; set; } = new() { "Einlass", "Innen", "Auslass", "hinten: Temp" };
+    public bool IstLuft(string name) => LuftFuehler.Any(t => t.Length > 0 && name.Contains(t, StringComparison.OrdinalIgnoreCase));
     // Alarmfenster auf dem Bildschirm, sobald ein Wert rot wird
     public bool AlarmFenster { get; set; } = true;
     // Automatisch herunterfahren nach so vielen Sekunden ohne Reaktion (0 = nur auf Knopfdruck)

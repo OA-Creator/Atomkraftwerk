@@ -114,6 +114,10 @@ public sealed class FritzQuelle
 
     public double? Watt => _watt;
 
+    // Temperatur am Fühler der Steckdose (°C), so wie die FRITZ!Box sie meldet
+    private double? _temp;
+    public double? Temp => _temp;
+
     private async Task EinmalAsync()
     {
         if (!await AngemeldetAsync()) return;
@@ -121,6 +125,10 @@ public sealed class FritzQuelle
         var mw = await BefehlAsync("getswitchpower");
         if (mw is null) return; // Sitzung abgelaufen -> nächster Durchlauf meldet neu an
         _watt = double.TryParse(mw.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var m) ? m / 1000.0 : null;
+
+        // Temperatur der Steckdose (FRITZ!Box liefert Zehntelgrad, z. B. 195 = 19,5 °C)
+        var tx = await BefehlAsync("gettemperature");
+        _temp = tx is not null && double.TryParse(tx.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var t) ? t / 10.0 : null;
 
         // Verbrauch des laufenden PCs mitzählen (Watt × Zeit), für die Standby-Rechnung
         var jetzt = DateTime.Now;

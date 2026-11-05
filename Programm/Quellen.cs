@@ -49,9 +49,18 @@ public sealed class HardwareQuelle : IDisposable
         _cpuWatt = Finde(cpu, SensorType.Power, "Package");
         _cpuLast = Finde(cpu, SensorType.Load, "CPU Total");
 
-        // Grafikkarte: die mit dem meisten Speicher (nicht die Grafik im Prozessor)
+        // Grafikkarte: eigene Karte vor der Grafik im Prozessor (seit 03.11.2026).
+        // Mit Treiber 26.8.1 liefert LHM bei der Nitro weder Lüfter noch Speicher -> Erkennung über den Namen:
+        // "AMD Radeon(TM) Graphics" ist die Prozessorgrafik und kommt nur dran, wenn sonst nichts da ist.
+        // Alle gefundenen Grafikchips mit ihren Sensoren stehen beim Start im Log.
         var gpus = AlleHardware.Where(h => h.HardwareType is HardwareType.GpuAmd or HardwareType.GpuNvidia or HardwareType.GpuIntel).ToList();
-        var gpu = gpus.OrderByDescending(g => g.Sensors.FirstOrDefault(s => s.SensorType == SensorType.SmallData && s.Name == "GPU Memory Total")?.Value ?? 0).FirstOrDefault();
+        static float Speicher(IHardware g) => g.Sensors.FirstOrDefault(s => s.SensorType == SensorType.SmallData && s.Name == "GPU Memory Total")?.Value ?? 0;
+        static bool IstProzessorGrafik(IHardware g) => g.Name.Contains("Radeon(TM) Graphics", StringComparison.OrdinalIgnoreCase);
+        foreach (var g in gpus)
+            Log.Schreiben($"Grafik gefunden: {g.Name} ({g.HardwareType}, Speicher {Speicher(g):0} MB): " +
+                string.Join(", ", g.Sensors.Select(s => $"{s.SensorType}/{s.Name}")));
+        if (gpus.Count == 0) Log.Schreiben("Grafik gefunden: keine");
+        var gpu = gpus.OrderBy(IstProzessorGrafik).ThenByDescending(Speicher).FirstOrDefault();
         var g1 = gpu is null ? new List<IHardware>() : new List<IHardware> { gpu };
         _gpuTemp = Finde(g1, SensorType.Temperature, "GPU Core");
         _gpuHot = Finde(g1, SensorType.Temperature, "GPU Hot Spot");
@@ -240,7 +249,8 @@ public sealed class IcueQuelle
             var name = namen[i].Trim();
             var id = "icue." + IdAus(name);
             if (PumpeVomBoard && (id == PumpenSteuerung.Id || name.Contains("pump", StringComparison.OrdinalIgnoreCase))) continue;
-            var mw = a.Wert(id, name, "Kühlung", EinheitAus(name));
+            var einheit = EinheitAus(name);
+            var mw = a.Wert(id, name, einheit == "°C" && _e.IstLuft(name) ? "Luft" : "Kühlung", einheit);
             mw.Setzen(Laeuft && ZahlAus(werte[i], out var v) ? v : null);
         }
     }

@@ -7,13 +7,17 @@ namespace Atomkraftwerk;
 // Alarmfenster: Wird ein Wert rot, springt ein Fenster über allem auf
 // (alarmfenster.ps1, Windows PowerShell) mit Countdown und Knopf
 // "Jetzt herunterfahren". Nach "Abbrechen" meldet sich derselbe Wert
-// erst wieder, wenn er zwischendurch einmal nicht rot war.
+// erst wieder, wenn er zwischendurch unter die gelbe Grenze gefallen ist
+// (kein Dauerfeuer, wenn ein Wert genau an der roten Grenze pendelt).
+// Aufs Handy geht pro Wert höchstens eine Meldung alle 10 Minuten.
 // ---------------------------------------------------------------
 public sealed class AlarmMelder
 {
     private readonly Einstellungen _e;
     private readonly string _ordner;
     private readonly HashSet<string> _gemeldet = new();
+    private readonly Dictionary<string, DateTime> _handyZuletzt = new();
+    private static readonly TimeSpan HandyPause = TimeSpan.FromMinutes(10);
     private Process? _fenster;
 
     public AlarmMelder(Einstellungen e, string ordner) { _e = e; _ordner = ordner; }
@@ -29,8 +33,8 @@ public sealed class AlarmMelder
             Log.Schreiben("Handy-Test angefordert.");
             Handy.Senden(_e.Handy, "Atomkraftwerk – TEST", "Testmeldung vom PC. Wenn das ankommt, klappt der Alarm aufs Handy.", test: true);
         }
-        // Wieder normal -> darf sich beim nächsten Mal erneut melden
-        _gemeldet.RemoveWhere(id => !rot.Any(r => r.id == id));
+        // Erst wieder richtig normal (nicht mehr gelb) -> darf sich beim nächsten Mal erneut melden
+        _gemeldet.RemoveWhere(id => anlage.StatusVon(id) is "ok" or "aus");
         if (_fenster != null && !_fenster.HasExited) return;   // Fenster ist schon offen
         if (!rot.Any(r => !_gemeldet.Contains(r.id))) return;  // nichts Neues
 
@@ -38,7 +42,13 @@ public sealed class AlarmMelder
         var text = string.Join("\n", rot.Select(r => $"{r.name}: {r.text}"));
         var abschalten = _e.AlarmFenster && _e.AlarmAbschaltenSekunden > 0
             ? $"\nDer PC fährt in {_e.AlarmAbschaltenSekunden} s herunter, wenn am PC niemand reagiert." : "";
-        Handy.Senden(_e.Handy, "ALARM – Atomkraftwerk", text + abschalten);
+        var jetzt = DateTime.Now;
+        if (rot.Any(r => !_handyZuletzt.TryGetValue(r.id, out var t) || jetzt - t >= HandyPause))
+        {
+            foreach (var r in rot) _handyZuletzt[r.id] = jetzt;
+            Handy.Senden(_e.Handy, "ALARM – Atomkraftwerk", text + abschalten);
+        }
+        else Log.Schreiben("Handy: Alarm nicht erneut gesendet (letzte Meldung unter 10 Minuten her).");
         if (!_e.AlarmFenster) return;
         try
         {

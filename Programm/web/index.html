@@ -26,7 +26,7 @@
   --balken:#BFE3EC; --aktiv:#EEF1F4; --gruen:#1F9E3D; --rahmen:rgba(31,158,61,.35);
 }
 *{box-sizing:border-box}
-@media (min-width:761px){html{zoom:.7}}
+html{zoom:.7}
 html,body{margin:0;background:var(--grund);color:var(--text);font-family:var(--sans)}
 a{color:var(--bernstein)}
 button{font:inherit}
@@ -38,6 +38,9 @@ button{font:inherit}
 .pille{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;font-size:14px;border:1px solid var(--ok-rand);background:var(--ok-grund);color:var(--ok-text)}
 .pille i{width:9px;height:9px;border-radius:50%;background:var(--ok)}
 .pille.warn{border-color:var(--warn-rand);background:var(--warn-grund);color:var(--warn)} .pille.warn i{background:var(--warn)}
+.pille.aus{border-color:var(--linie2);background:var(--feld);color:var(--leise)} .pille.aus i{background:var(--leise)}
+.startknopf{margin-left:12px;display:inline-block;padding:6px 14px;border-radius:8px;border:1px solid var(--bernstein);color:var(--bernstein);text-decoration:none;font-weight:600}
+.stand{grid-column:span 12;display:none;padding:10px 14px;border:1px solid var(--linie2);border-radius:10px;background:var(--feld);color:var(--leise);font-size:15px}
 .pille.alarm{border-color:var(--alarm-rand);background:var(--alarm-grund);color:var(--alarm)} .pille.alarm i{background:var(--alarm)}
 .laufzeit{font-family:var(--mono);font-size:14px;color:var(--leise)}
 .knopf{min-height:44px;padding:0 14px;background:var(--panel);color:var(--text);border:1px solid var(--linie2);border-radius:8px;cursor:pointer}
@@ -63,12 +66,21 @@ main{flex:999 1 640px;min-width:0;display:grid;grid-template-columns:repeat(12,m
 .pumpe{margin:0 auto;align-self:center;font-family:var(--mono);font-size:24px;font-weight:700;color:var(--bernstein)}
 .pfeil.steigt{color:var(--alarm)} .pfeil.faellt{color:var(--ok)} .pfeil.steht{color:var(--leise)}
 .felder{display:grid;gap:10px}
+.kostenreihe{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-top:10px}.kostenreihe .feld{flex:0 1 calc((100% - 50px) / 6);min-width:150px}
 .eingabe{display:block;width:100%;box-sizing:border-box;margin-top:6px;min-height:38px;padding:0 10px;background:var(--panel);color:var(--text);border:1px solid var(--linie2);border-radius:8px;font:15px var(--mono)}
 .eingabe:focus{outline:none;border-color:var(--bernstein)}
 .reihe{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px}
 .knopf.rot{color:var(--alarm);border-color:var(--alarm-rand);background:var(--alarm-grund)}
 .knopf.rot:hover{border-color:var(--alarm)}
 .hmeldung{color:var(--leise);font-size:14px}
+.frage{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:20px}
+.frage.auf{display:flex}
+.frage .kasten{width:560px;max-width:100%;box-sizing:border-box;background:var(--kopf);border:2px solid var(--alarm);border-radius:16px;padding:30px 34px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.frage b{display:block;font-family:'Exo',var(--schmal);font-size:30px;letter-spacing:.08em;color:var(--alarm);margin-bottom:12px}
+.frage p{margin:0 0 26px;color:var(--text2);font-size:19px;line-height:1.45}
+.frage .reihe{margin:0;justify-content:flex-end;gap:14px}
+.frage .knopf{min-height:56px;padding:0 26px;font-size:18px}
+@media (max-width:760px){.frage .kasten{padding:22px}.frage b{font-size:22px}.frage p{font-size:16px;margin-bottom:20px}.frage .knopf{padding:0 16px;font-size:16px}}
 .feld{background:var(--feld);border-radius:8px;padding:7px 13px 11px;min-width:0}
 .feld small{display:block;font-size:13.5px;font-weight:600;letter-spacing:.1em;color:var(--leise)}
 .feld b{display:block;font-family:var(--mono);font-weight:500;font-size:21px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -175,6 +187,7 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
   </nav>
 
   <main>
+    <div class="stand" id="stand">PC aus – Stand von <b id="standzeit">—</b> Uhr <a id="pcstart" class="startknopf" href="http://fritz.box/#/network" target="_blank" rel="noopener" data-tip="Öffnet die FRITZ!Box. Dort beim PC auf „Computer starten“ tippen">PC starten</a></div>
     <div class="fehler" id="fehler">Keine Verbindung zum Atomkraftwerk. Läuft das Programm?</div>
 
     <section class="panel s7" id="kuehlung">
@@ -205,13 +218,18 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
         <span id="qualitaet" data-tip="Wasserqualität laut high flow NEXT (aus der Leitfähigkeit berechnet)">— %</span>
         <span id="flusswasser" data-tip="Wassertemperatur direkt am high flow NEXT">— °C</span>
       </div>
-      <div class="klein" id="pzeile" style="display:none;align-items:center" data-tip="Pumpe am Board-Anschluss CPU_OPT. Startschub: 100 %, bis der high flow NEXT Durchfluss meldet. Automatik: hält den eingestellten Durchfluss. BIOS: das Board regelt selbst (Programm aus oder Steuerung abgeschaltet)">
+      <div class="klein" id="pzeile" style="display:none;align-items:center" data-tip="Pumpe am Board-Anschluss FAN4_PUMP. Startschub: mit der eingestellten Anlauf-Stärke und -Zeit, bis der high flow NEXT Durchfluss meldet. Automatik: hält den eingestellten Durchfluss. BIOS: das Board regelt selbst (Programm aus oder Steuerung abgeschaltet)">
         <span id="pmodus">—</span>
+        <span id="phinweis" style="display:none;color:var(--warn);font-weight:600" data-tip="">⚠ ungeregelt</span>
         <span id="pprozent">— %</span>
         <select id="pbetrieb" aria-label="Pumpenbetrieb" style="min-height:36px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 8px;font:inherit;font-size:15px" data-tip="Automatik: Pumpe so langsam wie möglich, aber mit dem eingestellten Durchfluss (Standard 60 l/h). Hand: du stellst die Ansteuerung selbst ein (25–100 %)"><option value="auto">Automatik</option><option value="hand">Hand</option></select>
         <label id="pautobox" style="display:flex;align-items:center;gap:8px;flex:1;min-width:220px">Ziel <input type="range" id="pziel" min="30" max="150" step="5" style="flex:1;accent-color:var(--bernstein)"> <b id="pzieltext">—</b></label>
         <label id="phandbox" style="display:none;align-items:center;gap:8px;flex:1;min-width:220px">Pumpe <input type="range" id="phand" min="25" max="100" step="1" style="flex:1;accent-color:var(--bernstein)"> <b id="phandtext">—</b></label>
-        <button type="button" id="pstandard" data-tip="Zurück auf Standard: Automatik, 60 l/h, Hand-Wert 60 %, gelernte Untergrenze gelöscht" style="min-height:36px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 12px;font:inherit;font-size:14px;cursor:pointer">Standard</button>
+        <label id="panlaufbox" style="display:flex;align-items:center;gap:8px" data-tip="Anlauf (Startschub) nach Programmstart oder wenn der Durchfluss wegbricht: so lange und so stark läuft die Pumpe mindestens, bevor geregelt wird. Ohne gemessenen Durchfluss bleibt sie im Anlauf">Anlauf
+          <select id="panlaufmin" aria-label="Anlaufzeit" style="min-height:36px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 8px;font:inherit;font-size:15px"><option value="1">1 min</option><option value="2">2 min</option><option value="3">3 min</option><option value="5">5 min</option><option value="10">10 min</option></select>
+          <select id="panlaufprozent" aria-label="Anlauf-Stärke" style="min-height:36px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 8px;font:inherit;font-size:15px"><option value="80">80 %</option><option value="90">90 %</option><option value="100">100 %</option></select>
+        </label>
+        <button type="button" id="pstandard" data-tip="Zurück auf Standard: Automatik, 60 l/h, Hand-Wert 60 %, Anlauf 3 min mit 100 %, gelernte Untergrenze gelöscht" style="min-height:36px;background:var(--feld);color:var(--text);border:1px solid var(--linie2);border-radius:8px;padding:0 12px;font:inherit;font-size:14px;cursor:pointer">Standard</button>
       </div>
       <div class="liste" id="luefter" data-tip="Lüfterdrehzahlen aus iCUE"></div>
     </section>
@@ -255,6 +273,11 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
       </div>
     </section>
 
+    <section class="panel s12" id="luft">
+      <h2>LUFT IM GEHÄUSE <span>Fühler am Commander PRO und iCUE LINK</span></h2>
+      <div class="felder" id="luftfelder" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="feld"><small>—</small><b>—</b></div></div>
+    </section>
+
     <section class="panel s12" id="laufwerke">
       <h2>LAUFWERKE</h2>
       <div class="felder" id="lwfelder" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"><div class="feld"><small>—</small><b>—</b></div></div>
@@ -267,9 +290,13 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
         <div class="feld" id="sheutetip" data-tip="Verbrauch heute, Standby mitgezählt"><small>HEUTE</small><b id="sheute">— <em>kWh</em></b></div>
         <div class="feld" data-tip="Durchschnittlicher Verbrauch pro Tag in diesem Monat (im ersten Monat ab Beginn der Strommessung)"><small>MONAT Ø / TAG</small><b id="sschnitt">— <em>kWh</em></b></div>
         <div class="feld" data-tip="Verbrauch seit Beginn der Messung"><small>GESAMT</small><b id="sgesamt">— <em>kWh</em></b></div>
-        <div class="feld" id="skostentip" data-tip="Stromkosten in diesem Monat (Strompreis steht in atomkraftwerk.json)"><small>KOSTEN MONAT</small><b id="skosten" style="color:var(--bernstein)">— <em>€</em></b></div>
-        <div class="feld" data-tip="Wie lange der PC heute läuft"><small>LAUFZEIT HEUTE</small><b id="laufzeit2">—</b></div>
         <div class="feld" id="sstandbytip" data-tip="Was an der Steckdose gezogen wurde, während der PC zuletzt aus war (aus dem Zähler der FRITZ!Box). Wird beim nächsten Start berechnet"><small>STANDBY (PC AUS)</small><b id="sstandby">— <em>W</em></b></div>
+        <div class="feld" data-tip="Wie lange der PC heute läuft"><small>LAUFZEIT HEUTE</small><b id="laufzeit2">—</b></div>
+        <div class="feld" id="stemptip" data-tip="Temperatur am Fühler der FRITZ!-Steckdose (sitzt unten an der Wand unter dem PC-Brett)"><small>STECKDOSE</small><b id="stemp">— <em>°C</em></b></div>
+      </div>
+      <div class="kostenreihe">
+        <div class="feld" id="skostenheutetip" data-tip="Stromkosten heute, Standby mitgezählt. Wird alle 5 Minuten aus der FRITZ!Box aktualisiert"><small>KOSTEN HEUTE</small><b id="skostenheute" style="color:var(--bernstein)">— <em>€</em></b></div>
+        <div class="feld" id="skostentip" data-tip="Stromkosten in diesem Monat (Strompreis steht in atomkraftwerk.json)"><small>KOSTEN MONAT</small><b id="skosten" style="color:var(--bernstein)">— <em>€</em></b></div>
       </div>
     </section>
     <section class="panel s12" id="auswertung">
@@ -281,8 +308,8 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
         <select id="adetail" aria-label="Ausschnitt" data-tip="Ausschnitt von heute">
           <option value="0">ganzer Tag</option><option value="360">letzte 6 Stunden</option><option value="180">letzte 3 Stunden</option><option value="60">letzte Stunde</option>
         </select>
-        <select id="abereich" aria-label="Bereich" data-tip="Bereich: Wasser, Steckdose oder Laufwerke">
-          <option value="Wasser">Wasser</option><option value="Steckdose">Steckdose</option><option value="Laufwerke">Laufwerke</option>
+        <select id="abereich" aria-label="Bereich" data-tip="Bereich: Wasser, Luft im Gehäuse, Steckdose oder Laufwerke">
+          <option value="Wasser">Wasser</option><option value="Luft">Luft</option><option value="Steckdose">Steckdose</option><option value="Laufwerke">Laufwerke</option>
         </select>
         <select id="awert" aria-label="Wert" data-tip="Wert aus dem gewählten Bereich"></select>
         <label class="dazu" id="awtbox" data-tip="Wassertemperatur im Behälter als zweite Kurve unter den Durchfluss legen (Skala rechts)" style="display:none"><input type="checkbox" id="awt"> + Wassertemperatur</label>
@@ -313,9 +340,16 @@ table.spitzen td.z{font-family:var(--mono);text-align:right}
         <button class="knopf" type="button" id="htest" data-tip="Schickt eine Testmeldung an alle eingetragenen Handys">Test-Alarm senden</button>
         <span class="hmeldung" id="hmeldung"></span>
         <span style="flex:1"></span>
-        <button class="knopf rot" type="button" id="pcaus" data-tip="Fährt den PC nach einer Rückfrage in 5 Sekunden herunter">PC herunterfahren</button>
+        <button class="knopf rot" type="button" id="pcaus">PC herunterfahren</button>
       </div>
     </section>
+    <div class="frage" id="pcfrage" role="dialog" aria-modal="true" aria-label="PC herunterfahren">
+      <div class="kasten">
+        <b>PC HERUNTERFAHREN?</b>
+        <p>Der PC geht 5 Sekunden nach dem Bestätigen aus.</p>
+        <div class="reihe"><button class="knopf" type="button" id="pcnein">Abbrechen</button><button class="knopf rot" type="button" id="pcja">Herunterfahren</button></div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -382,11 +416,19 @@ function leiste(el, v, von, bis, warn, alarm, st, einh) {
   $(el.replace('leiste', 'skala')).innerHTML = `<span>${z(von, st)}</span><span style="color:var(--alarm)">ab ${z(alarm, st)} ${einh} rot</span><span>${z(bis, st)}</span>`;
 }
 
+let letzterStand = null; // Uhrzeit der letzten erfolgreichen Abfrage
 async function laden() {
   let d;
   try { d = await (await fetch('/api/jetzt', { cache: 'no-store' })).json(); }
-  catch (e) { $('fehler').style.display = 'block'; $('pilletext').textContent = 'keine Verbindung'; $('pille').className = 'pille alarm'; return; }
-  $('fehler').style.display = 'none';
+  catch (e) {
+    // PC aus: letzte Werte stehen lassen, nur dezent den Stand anzeigen
+    if (letzterStand) { $('fehler').style.display = 'none'; $('stand').style.display = 'block'; $('standzeit').textContent = letzterStand; $('pilletext').textContent = 'PC aus'; $('pille').className = 'pille aus'; }
+    else { $('fehler').style.display = 'block'; $('pilletext').textContent = 'keine Verbindung'; $('pille').className = 'pille alarm'; }
+    return;
+  }
+  $('fehler').style.display = 'none'; $('stand').style.display = 'none';
+  letzterStand = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  if (d.startLink) $('pcstart').href = d.startLink;
   grenzen = d.grenzen || {};
   adressen = d.adressen || [];
 
@@ -398,7 +440,7 @@ async function laden() {
 
   // Kühlung aus iCUE
   const icue = d.werte.filter(w => w.id.startsWith('icue.'));
-  const wasser = icue.find(w => w.einheit === '°C' && /beh|wasser|coolant|reservoir/i.test(w.name)) || icue.find(w => w.einheit === '°C');
+  const wasser = icue.find(w => w.einheit === '°C' && /beh|wasser|coolant|reservoir/i.test(w.name)) || icue.find(w => w.einheit === '°C' && w.gruppe !== 'Luft');
   if (wasser) {
     wasserId = wasser.id;
     $('wname').textContent = wasser.name.toUpperCase();
@@ -442,6 +484,16 @@ async function laden() {
   const gl = wert(d, 'gpu.luefter').aktuell; $('gpuluef').textContent = gl == null ? '— rpm' : Math.round(gl) + ' rpm';
   setze('gpuhot', gh.aktuell, 1, '°'); setze('gpumax', gt.max, 1, '°'); setze('gpuavg', gt.schnitt, 1, '°');
 
+  // Luft im Gehäuse (nur gelb ab Grenze, kein Alarm, nichts aufs Handy)
+  const luft = d.werte.filter(w => w.gruppe === 'Luft');
+  $('luft').style.display = luft.length ? '' : 'none';
+  const ein = luft.find(w => /einlass/i.test(w.name)), aus = luft.find(w => /auslass/i.test(w.name));
+  const diff = (a, b) => a && b && a.aktuell != null && b.aktuell != null ? a.aktuell - b.aktuell : null;
+  const dA = diff(aus, ein), dW = diff(wasser, ein);
+  $('luftfelder').innerHTML = luft.map(w => `<div class="feld ${w.status === 'warn' ? 'warn' : ''}" data-tip="${w.name} · seit Programmstart min ${z(w.min)} °C, max ${z(w.max)} °C, Ø ${z(w.schnitt)} °C. Gelb ab ${grenzen.luftWarnC} °C (nur im Leitstand, kein Alarm, nichts aufs Handy)"><small>${w.name.replace(/^Commander PRO /i, '').replace(/^Temp /i, '').toUpperCase()}</small><b>${w.aktuell == null ? '—' : z(w.aktuell)} <em>°C</em></b></div>`).join('')
+    + (ein ? `<div class="feld" data-tip="Auslass oben minus Einlass: so stark erwärmt sich die Luft auf dem Weg durch den PC"><small>Δ AUSLASS − EINLASS</small><b>${dA == null ? '—' : z(dA)} <em>K</em></b></div>`
+      + `<div class="feld" data-tip="Wasser im Behälter minus Einlass-Luft: je kleiner, desto besser arbeiten die Radiatoren"><small>Δ WASSER − EINLASS</small><b>${dW == null ? '—' : z(dW)} <em>K</em></b></div>` : '');
+
   // Laufwerke
   const lwListe = d.werte.filter(w => w.gruppe === 'Laufwerke');
   $('laufwerke').style.display = lwListe.length ? '' : 'none';
@@ -451,6 +503,9 @@ async function laden() {
   const sw = wert(d, 'strom.watt'), sd = d.strom || {};
   const zahlEinh = (v, st, e) => v == null ? `— <em>${e}</em>` : `${z(v, st)} <em>${e}</em>`;
   $('sjetzt').innerHTML = zahlEinh(sw.aktuell, 0, 'W');
+  const stt = wert(d, 'strom.temp');
+  $('stemp').innerHTML = zahlEinh(stt.aktuell, 1, '°C');
+  $('stemptip').dataset.tip = 'Temperatur am Fühler der FRITZ!-Steckdose (sitzt unten an der Wand unter dem PC-Brett)' + (stt.min == null ? '' : ` · seit Programmstart min ${z(stt.min, 1)} °C, max ${z(stt.max, 1)} °C, Ø ${z(stt.schnitt, 1)} °C`);
   $('sjetzttip').dataset.tip = 'Was der ganze PC gerade an der Steckdose zieht' + (sw.min == null ? '' : ` · seit Programmstart min ${z(sw.min, 0)} W, max ${z(sw.max, 0)} W, Ø ${z(sw.schnitt, 0)} W`);
   $('sheute').innerHTML = zahlEinh(sd.heuteKWh, 2, 'kWh');
   $('sheutetip').dataset.tip = 'Verbrauch heute, Standby mitgezählt' + (sd.kostenHeuteEuro == null ? '' : ` · Kosten heute ${z(sd.kostenHeuteEuro, 2)} €`);
@@ -461,6 +516,8 @@ async function laden() {
     ? 'Was an der Steckdose gezogen wird, während der PC aus ist. Wird beim nächsten Start nach einem Herunterfahren berechnet'
     : `PC aus von ${sd.standbyVon} bis ${sd.standbyBis} Uhr: ${z(sd.standbyKWh, 3)} kWh, im Schnitt ${z(sd.standbyWatt, 1)} W` + (sd.standbyKWh != null && d.strompreisCentProKWh ? ` · Kosten ${z(sd.standbyKWh * d.strompreisCentProKWh / 100, 2)} €` : '');
   $('skosten').innerHTML = zahlEinh(sd.kostenMonatEuro, 2, '€');
+  $('skostenheute').innerHTML = zahlEinh(sd.kostenHeuteEuro, 2, '€');
+  $('skostenheutetip').dataset.tip = `Stromkosten heute bei ${z(d.strompreisCentProKWh, 2)} Cent/kWh, Standby mitgezählt. Wird alle 5 Minuten aus der FRITZ!Box aktualisiert`;
   $('skostentip').dataset.tip = `Stromkosten in diesem Monat bei ${z(d.strompreisCentProKWh, 2)} Cent/kWh (Preis steht in atomkraftwerk.json)`;
   const mk = $('strommarke');
   mk.style.display = sd.verbunden ? 'none' : '';
@@ -732,8 +789,16 @@ async function pumpeLaden(ziel, extra) {
   $('pmodus').style.color = p.modus === 'Startschub' ? 'var(--warn)' : '';
   $('pprozent').textContent = p.modus === 'BIOS' ? '' : Math.round(p.prozent) + ' %' + (p.boden > 0 && p.betrieb !== 'hand' ? ` (mind. ${Math.round(p.boden)} %)` : '');
   if (!pzielAktiv) $('pziel').value = p.ziel;
-  $('pzieltext').textContent = Math.round(pzielAktiv ? $('pziel').value : p.ziel) + ' l/h';
+  $('pzieltext').textContent = Math.round(pzielAktiv ? $('pziel').value : p.ziel) + ' l/h'
+    + (p.zielJetzt != null && p.betrieb !== 'hand' && Math.round(p.zielJetzt) !== Math.round(p.ziel) ? ` → jetzt ${Math.round(p.zielJetzt)} l/h` : '')
+    + (p.wasser != null && p.betrieb !== 'hand' ? ` (Wasser ${String(p.wasser).replace('.', ',')} °C)` : '');
+  if (p.zielMax != null) $('pautobox').dataset.tip = `Automatik: Pumpe so langsam wie möglich, aber mit diesem Durchfluss. Bis ${p.tempAb} °C Wassertemperatur gilt der eingestellte Wert, bis ${p.tempBis} °C steigt das Ziel gleichmäßig auf ${p.zielMax} l/h`;
   $('pziel').disabled = !p.steuern;
+  if (document.activeElement !== $('panlaufmin') && p.anlaufMin != null) $('panlaufmin').value = String(p.anlaufMin);
+  if (document.activeElement !== $('panlaufprozent') && p.anlaufProzent != null) $('panlaufprozent').value = String(p.anlaufProzent);
+  $('panlaufmin').disabled = $('panlaufprozent').disabled = !p.steuern;
+  $('phinweis').style.display = p.hinweis ? '' : 'none';
+  $('phinweis').dataset.tip = p.hinweis || '';
 }
 $('pziel').addEventListener('input', () => { pzielAktiv = true; $('pzieltext').textContent = $('pziel').value + ' l/h'; });
 $('pstandard').addEventListener('click', () => pumpeLaden(null, 'standard=1'));
@@ -741,6 +806,8 @@ $('pziel').addEventListener('change', async () => { await pumpeLaden($('pziel').
 $('phand').addEventListener('input', () => { phandAktiv = true; $('phandtext').textContent = $('phand').value + ' %'; });
 $('phand').addEventListener('change', async () => { await pumpeLaden(null, 'prozent=' + $('phand').value); phandAktiv = false; });
 $('pbetrieb').addEventListener('change', () => pumpeLaden(null, 'betrieb=' + $('pbetrieb').value));
+$('panlaufmin').addEventListener('change', () => pumpeLaden(null, 'anlaufMin=' + $('panlaufmin').value));
+$('panlaufprozent').addEventListener('change', () => pumpeLaden(null, 'anlaufProzent=' + $('panlaufprozent').value));
 pumpeLaden();
 setInterval(() => pumpeLaden(), 2000);
 
@@ -774,8 +841,12 @@ async function handy(aktion) {
 }
 $('hspeichern').addEventListener('click', () => handy('speichern'));
 $('htest').addEventListener('click', () => handy('test'));
-$('pcaus').addEventListener('click', async () => {
-  if (!confirm('PC jetzt herunterfahren?')) return;
+$('pcaus').addEventListener('click', e => { e.stopPropagation(); tipAus(); $('pcfrage').classList.toggle('auf'); });
+$('pcnein').addEventListener('click', () => $('pcfrage').classList.remove('auf'));
+$('pcfrage').addEventListener('click', e => { if (e.target === $('pcfrage')) $('pcfrage').classList.remove('auf'); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('pcfrage').classList.remove('auf'); });
+$('pcja').addEventListener('click', async () => {
+  $('pcfrage').classList.remove('auf');
   try { await fetch('/api/herunterfahren', { method: 'POST' }); $('hmeldung').textContent = 'PC fährt in 5 Sekunden herunter …'; }
   catch (e) { $('hmeldung').textContent = 'Keine Verbindung zum Programm'; }
 });

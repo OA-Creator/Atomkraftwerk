@@ -32,7 +32,9 @@ public sealed class Auswertung
         Dazu("Wasser", Finde(i => i.id.StartsWith("icue.") && i.name.Contains("pumpe", StringComparison.OrdinalIgnoreCase)), "Pumpe");
         Dazu("Wasser", "flow.leitwert");
         Dazu("Wasser", "flow.qualitaet");
+        foreach (var lu in info.Where(i => i.gruppe == "Luft")) Dazu("Luft", lu.id, lu.name.Replace("Commander PRO ", ""));
         Dazu("Steckdose", "strom.watt", "Leistung");
+        Dazu("Steckdose", "strom.temp", "Temperatur");
         foreach (var lw in info.Where(i => i.id.StartsWith("lw."))) Dazu("Laufwerke", lw.id);
         liste.Add(new Wert("Steckdose", "strom.kwh", "Verbrauch", "kWh"));
         return liste;

@@ -17,6 +17,7 @@ public sealed class Server
     public string Adresse { get; private set; } = "";
     public Auswertung? Auswertung { get; set; }
     public PumpenSteuerung? Pumpe { get; set; }
+    public Func<Task>? VorDemHerunterfahren { get; set; }
     public Einstellungen? Einst { get; set; }
     private readonly string _ordner;
 
@@ -89,7 +90,7 @@ public sealed class Server
             }
             if (pfad == "/api/pumpe" && Pumpe != null)
             {
-                Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(Pumpe.Json(ctx.Request.QueryString["ziel"], ctx.Request.QueryString["betrieb"], ctx.Request.QueryString["prozent"], ctx.Request.QueryString["standard"] == "1")));
+                Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes(Pumpe.Json(ctx.Request.QueryString["ziel"], ctx.Request.QueryString["betrieb"], ctx.Request.QueryString["prozent"], ctx.Request.QueryString["standard"] == "1", ctx.Request.QueryString["anlaufMin"], ctx.Request.QueryString["anlaufProzent"])));
                 return;
             }
             if (pfad == "/api/handy" && Einst != null)
@@ -101,6 +102,7 @@ public sealed class Server
             {
                 if (ctx.Request.HttpMethod != "POST") { Senden(ctx, 405, "text/plain", Encoding.UTF8.GetBytes("nur POST")); return; }
                 Log.Schreiben("PC herunterfahren – im Leitstand angefordert.");
+                try { VorDemHerunterfahren?.Invoke().Wait(TimeSpan.FromSeconds(5)); } catch { }
                 Process.Start(new ProcessStartInfo("shutdown", "/s /t 5 /c \"Atomkraftwerk: PC wird heruntergefahren\"") { UseShellExecute = false, CreateNoWindow = true });
                 Senden(ctx, 200, "application/json; charset=utf-8", Encoding.UTF8.GetBytes("{\"ok\":true}"));
                 return;

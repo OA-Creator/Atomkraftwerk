@@ -52,6 +52,7 @@ public sealed class Anlage
         Neu("flow.leitwert", "Leitfähigkeit", "Kühlung", "µS/cm");
         Neu("flow.qualitaet", "Wasserqualität", "Kühlung", "%");
         Neu("strom.watt", "PC an der Steckdose", "Strom", "W");
+        Neu("strom.temp", "Steckdose", "Strom", "°C");
     }
 
     private Messwert Neu(string id, string name, string gruppe, string einheit)
@@ -85,7 +86,7 @@ public sealed class Anlage
         {
             // Wassertemperatur fuer den Durchfluss-Alarm: high flow NEXT, sonst iCUE
             double? wasser = _werte.TryGetValue("flow.wasser", out var fw) ? fw.Aktuell : null;
-            wasser ??= _werte.Values.Where(x => x.Id.StartsWith("icue.") && x.Einheit == "°C" && x.Aktuell != null)
+            wasser ??= _werte.Values.Where(x => x.Id.StartsWith("icue.") && x.Einheit == "°C" && x.Gruppe != "Luft" && x.Aktuell != null)
                                     .Select(x => x.Aktuell).Max();
             bool wasserWarm = g.FlussAlarmAbWasserC <= 0 || (wasser != null && wasser >= g.FlussAlarmAbWasserC);
             foreach (var m in _werte.Values)
@@ -96,11 +97,12 @@ public sealed class Anlage
                 {
                     "board.vrm" => v >= g.VrmAlarmC ? "alarm" : v >= g.VrmWarnC ? "warn" : "ok",
                     "board.soc" => v >= g.SocAlarmV ? "alarm" : v >= g.SocWarnV ? "warn" : "ok",
-                    "cpu.temp" => v >= g.CpuAlarmC ? "alarm" : "ok",
+                    "cpu.temp" => v >= g.CpuAlarmC ? "alarm" : v >= g.CpuWarnC ? "warn" : "ok",
                     "gpu.hotspot" => v >= g.GpuHotspotAlarmC ? "alarm" : "ok",
                     "flow.durchfluss" => v <= g.FlussAlarmLh && wasserWarm ? "alarm" : v <= g.FlussWarnLh ? "warn" : "ok",
                     "flow.wasser" => v >= g.WasserAlarmC ? "alarm" : v >= g.WasserWarnC ? "warn" : "ok",
                     _ when m.Id.StartsWith("lw.") => v >= g.LaufwerkAlarmC ? "alarm" : v >= g.LaufwerkWarnC ? "warn" : "ok",
+                    _ when m.Gruppe == "Luft" => v >= g.LuftWarnC ? "warn" : "ok",
                     _ when m.Id.StartsWith("icue.") && m.Einheit == "°C" =>
                         v >= g.WasserAlarmC ? "alarm" : v >= g.WasserWarnC ? "warn" : "ok",
                     _ => "ok"
@@ -116,6 +118,12 @@ public sealed class Anlage
             return _reihenfolge.Select(id => _werte[id]).Where(m => m.Status == "alarm" && m.Aktuell != null)
                 .Select(m => (m.Id, m.Name, m.Aktuell!.Value.ToString(m.Einheit == "V" ? "0.000" : "0.0", CultureInfo.GetCultureInfo("de-DE")) + (m.Einheit == "" ? "" : " " + m.Einheit)))
                 .ToList();
+    }
+
+    // Status eines einzelnen Werts ("ok", "warn", "alarm", "aus")
+    public string StatusVon(string id)
+    {
+        lock (_sperre) return _werte.TryGetValue(id, out var m) ? m.Status : "aus";
     }
 
     public string Gesamtstatus()
@@ -152,6 +160,28 @@ public sealed class Anlage
         if (sek <= 0 || sek > 120) return; // Standby/Pause nicht mitzählen
         var tag = jetzt.ToString("yyyy-MM-dd");
         lock (_sperre) { _laufzeit[tag] = (_laufzeit.TryGetValue(tag, out var s) ? s : 0) + sek; }
+    }
+
+    // Kurzer Text für die Handy-Meldung beim Herunterfahren
+    public string LetzterStandText()
+    {
+        var de = CultureInfo.GetCultureInfo("de-DE");
+        var teile = new List<string>();
+        double? wasser;
+        lock (_sperre)
+        {
+            wasser = _werte.Values.Where(x => x.Id.StartsWith("icue.") && x.Einheit == "°C" && x.Aktuell != null
+                                              && System.Text.RegularExpressions.Regex.IsMatch(x.Name, "beh|wasser|coolant|reservoir", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                                 .Select(x => x.Aktuell).FirstOrDefault();
+            wasser ??= _werte.TryGetValue("flow.wasser", out var fw) ? fw.Aktuell : null;
+        }
+        if (wasser is double w) teile.Add("Wasser " + w.ToString("0.0", de) + " °C");
+        if (Strom?.HeuteKWh is double hk) teile.Add("Strom heute " + hk.ToString("0.00", de) + " kWh");
+        if (Strom?.KostenHeuteEuro is double kh) teile.Add("Kosten heute " + kh.ToString("0.00", de) + " €");
+        if (Strom?.KostenMonatEuro is double km) teile.Add("Monat " + km.ToString("0.00", de) + " €");
+        var h = LaufzeitHeuteStunden();
+        teile.Add($"Laufzeit {(int)h}:{(int)Math.Round(h % 1 * 60):00} h");
+        return string.Join(" · ", teile);
     }
 
     public double LaufzeitHeuteStunden()
@@ -203,6 +233,7 @@ public sealed class Anlage
                 adressen = Heimnetz.Adressen(_e.Port),
                 grenzen = _e.Grenzen,
                 strompreisCentProKWh = _e.StrompreisCentProKWh,
+                startLink = _e.Handy.StartLink,
                 icue = new { datei = IcueDatei, stand = IcueStand, laeuft = IcueLaeuft },
                 strom = Strom is null ? null : new
                 {

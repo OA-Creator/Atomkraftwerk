@@ -178,18 +178,33 @@ static class AtomkraftwerkApp
             var st = Regex.Match(j, "\"status\"\\s*:\\s*\"(\\w+)\"").Groups[1].Value;
             var stText = st == "alarm" ? "ALARM" : st == "warn" ? "Warnung" : "läuft";
             text = "Atomkraftwerk – " + stText;
-            var w = Wert(j, "flow.wasser") ?? Wert(j, "icue.behälter");
-            var f = Wert(j, "flow.durchfluss");
+            var w = Wert(j, "icue\\.beh(?:ä|\\\\u00[eE]4)lter") ?? Wert(j, "flow\\.wasser");   // Behälter wie überall im Leitstand
+            var f = Wert(j, "flow\\.durchfluss");
             if (w != null) text += "\nWasser " + w + " °C";
             if (f != null) text += (w != null ? " · " : "\n") + f + " l/h";
         }
         if (text.Length > 63) text = text.Substring(0, 63);
         Ui(() => symbol.Text = text);
+        PumpeHinweis();
+    }
+
+    // Pumpe seit 1 Stunde ungeregelt -> einmal Meldung am Bildschirm
+    static string letzterHinweis;
+    static void PumpeHinweis()
+    {
+        var p = Holen("api/pumpe", 3000);
+        if (p == null) return;
+        var m = Regex.Match(p, "\"hinweis\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"");
+        if (!m.Success) { letzterHinweis = null; return; }
+        var h = Regex.Unescape(m.Groups[1].Value);
+        if (h == letzterHinweis) return;
+        letzterHinweis = h;
+        Ui(() => symbol.ShowBalloonTip(20000, "Atomkraftwerk – Pumpe", h, ToolTipIcon.Warning));
     }
 
     static string Wert(string json, string id)
     {
-        var m = Regex.Match(json, "\"id\"\\s*:\\s*\"" + Regex.Escape(id) + "\"[^{}]*?\"aktuell\"\\s*:\\s*(-?[0-9.]+)");
+        var m = Regex.Match(json, "\"id\"\\s*:\\s*\"" + id + "\"[^{}]*?\"aktuell\"\\s*:\\s*(-?[0-9.]+)");
         if (!m.Success) return null;
         double d;
         if (!double.TryParse(m.Groups[1].Value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out d)) return null;
